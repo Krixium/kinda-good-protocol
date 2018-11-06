@@ -13,6 +13,14 @@ namespace kgp
 	{
 		constexpr size_t HEADER = sizeof(PacketHeader);
 		constexpr size_t PACKET = 1500;
+		constexpr size_t DATA = PACKET - HEADER;
+	}
+
+	// Timeouts
+	namespace Timeout
+	{
+		constexpr int IDLE = 10 * 1000;
+		constexpr int RCV = 0.5 * 1000;
 	}
 
 	// Packet header
@@ -28,6 +36,6 @@ namespace kgp
 	struct Packet
 	{
 		struct PacketHeader Header;
-		char Data[size::HEADER - size::PACKET];
+		char Data[size::DATA];
 	};
 }
