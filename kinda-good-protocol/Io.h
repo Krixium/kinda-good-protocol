@@ -1,29 +1,38 @@
 #pragma once
 
+#include "res.h"
+
 #include <QThread>
 #include <QUdpSocket>
 
-class Io : public QThread
+namespace kgp
 {
-protected:
-	bool mIsRunning;
-	QUdpSocket mSocket;
-
-public:
-	inline Io(const bool running = true, QObject *parent = nullptr)
-		: QThread(parent)
-		, mIsRunning(running)
-		, mSocket(this)
+	class Io : public QThread
 	{
-	}
+	protected:
+		bool mIsRunning;
+		QUdpSocket mSocket;
 
-	virtual ~Io() = default;
+		struct State mState;
 
-	void Start() { start(); }
-	void Stop() { mIsRunning = false; }
+	public:
+		inline Io(const bool running = true, QObject *parent = nullptr)
+			: QThread(parent)
+			, mIsRunning(running)
+			, mSocket(this)
+			, mState(DependancyManager::Instance().GetState())
+		{
+		}
 
-protected:
-	void run() = 0;
+		virtual ~Io()
+		{
+			mSocket.close();
+		}
 
-};
+		void Start() { start(); }
+		void Stop() { mIsRunning = false; }
 
+	protected:
+		void run() = 0;
+	};
+}

@@ -2,6 +2,9 @@
 
 namespace kgp
 {
+	// Default port
+	constexpr short PORT = 42069;
+
 	// Control characters
 	constexpr char DATA = 0x02;
 	constexpr char ACK = 0x05;
@@ -41,4 +44,25 @@ namespace kgp
 
 	// Logging
 	constexpr char *LOG_FILE = "kgp.log";
+
+	// Program state
+	struct State 
+	{
+		// SYN received, sent for ACK
+		bool IDLE;
+		// SYN sent, waiting for ACk
+		bool RDY_SND;
+		// SYN established, waiting for ACK or DATA
+		bool WAIT;
+		// Received data
+		bool DATA_RCV;
+		// Data sent, waiting for ACK
+		bool DATA_SEND;
+		// Data sent, no ACK received before timeout
+		bool RESEND;
+		// Receive timeout reached
+		bool RX_TOR;
+		// WAIT timeout reached
+		bool IDLE_TOR;
+	};
 }

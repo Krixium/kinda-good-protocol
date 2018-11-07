@@ -10,12 +10,14 @@
 class KindaGoodProtocol : public QMainWindow
 {
 	Q_OBJECT
+
 private:
 	kgp::Transmitter mTx;
 	kgp::Receiver mRx;
 
 public:
 	KindaGoodProtocol(QWidget *parent = Q_NULLPTR);
+	~KindaGoodProtocol();
 
 private:
 	Ui::KindaGoodProtocolClass ui;

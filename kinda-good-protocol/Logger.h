@@ -14,30 +14,27 @@ namespace kgp
 	class Logger
 	{
 	public:
-		static std::unique_ptr<QFile> LogFile;
+		QFile mLogFile;
 
 	public:
-		Logger() = delete;
-		~Logger() = delete;
-
-		inline static void Initialize()
+		inline Logger()
+			: mLogFile(LOG_FILE)
 		{
-			LogFile->close();
-			LogFile = std::make_unique<QFile>(LOG_FILE);
-			LogFile->open(QIODevice::Append | QIODevice::Text);
+			if (mLogFile.isOpen()) mLogFile.close();
+			mLogFile.open(QIODevice::Append | QIODevice::Text);
 		}
 
-		inline static void Cleanup()
+		inline ~Logger()
 		{
-			LogFile->close();
+			if (mLogFile.isOpen()) mLogFile.close();
 		}
 
-		inline static void Log(const std::string& msg)
+		inline void Log(const std::string& msg)
 		{
 			QString line("[ " + QDateTime::currentDateTime().toString("dd/MM/yyyy - hh:mm:ss") + " KGP ]: " + msg.c_str() + '\n');
 
 			qDebug() << line;
-			LogFile->write(line.toStdString().c_str());
+			mLogFile.write(line.toStdString().c_str());
 		}
 	};
 }

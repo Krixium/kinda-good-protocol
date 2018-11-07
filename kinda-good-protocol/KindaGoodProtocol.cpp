@@ -1,4 +1,5 @@
 #include "KindaGoodProtocol.h"
+#include "DependancyManager.h"
 
 KindaGoodProtocol::KindaGoodProtocol(QWidget *parent)
 	: QMainWindow(parent)
@@ -7,13 +8,16 @@ KindaGoodProtocol::KindaGoodProtocol(QWidget *parent)
 {
 	ui.setupUi(this);
 
-	kgp::Logger::Initialize();
-
 	mTx.Start();
 	mRx.Start();
 
 	mTx.Stop();
 	mRx.Stop();
 	
-	kgp::Logger::Log("Main window initialized");
+	kgp::DependancyManager::Instance().GetLogger().Log("Main window initialized");
+}
+
+KindaGoodProtocol::~KindaGoodProtocol()
+{
+	kgp::DependancyManager::Instance().GetLogger().Log("Program exiting");
 }

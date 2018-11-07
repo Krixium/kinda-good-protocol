@@ -2,8 +2,6 @@
 
 #include "Io.h"
 
-#include <QThread>
-
 namespace kgp
 {
 	class Receiver : public Io
@@ -14,6 +12,9 @@ namespace kgp
 
 	protected:
 		void run();
+
+	private slots:
+		void newDataHandler();
 
 	};
 }

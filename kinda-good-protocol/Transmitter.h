@@ -2,8 +2,6 @@
 
 #include "Io.h"
 
-#include <QThread>
-
 namespace kgp
 {
 	class Transmitter : public Io
