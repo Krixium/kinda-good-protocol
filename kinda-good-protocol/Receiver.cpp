@@ -1,20 +1,22 @@
 #include "res.h"
 
+#include "Logger.h"
 #include "Receiver.h"
 
 kgp::Receiver::Receiver(const bool running, QObject *parent)
 	: Io(running, parent)
 {
-	Log("Receiver thread initialized");
 }
 
 void kgp::Receiver::run()
 {
+	Logger::Log("Receiver thread started");
+
 	while (mIsRunning)
 	{
 
 	}
 
 	quit();
-	Log("Receiver thread finished");
+	Logger::Log("Receiver thread finished");
 }

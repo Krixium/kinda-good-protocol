@@ -1,20 +1,22 @@
 #include "res.h"
 
+#include "Logger.h"
 #include "Transmitter.h"
 
 kgp::Transmitter::Transmitter(const bool running, QObject *parent)
 	: Io(running, parent)
 {
-	Log("Transmitter thread initialized");
 }
 
 void kgp::Transmitter::run()
 {
+	Logger::Log("Transmitter thread started");
+
 	while (mIsRunning)
 	{
 
 	}
 
 	quit();
-	Log("Transmitter thread finished");
+	Logger::Log("Transmitter thread finished");
 }

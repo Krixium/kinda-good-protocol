@@ -3,6 +3,7 @@
 #include <QtWidgets/QMainWindow>
 #include "ui_KindaGoodProtocol.h"
 
+#include "Logger.h"
 #include "Transmitter.h"
 #include "Receiver.h"
 

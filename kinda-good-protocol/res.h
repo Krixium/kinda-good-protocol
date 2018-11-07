@@ -1,10 +1,5 @@
 #pragma once
 
-#include <string>
-
-#include <QDebug>
-#include <QDateTime>
-
 namespace kgp
 {
 	// Control characters
@@ -44,10 +39,6 @@ namespace kgp
 		constexpr int RCV = 0.5 * 1000;
 	}
 
-	void inline Log(const std::string& msg) 
-	{
-		qDebug() << "[ " + QDateTime::currentDateTime().toString("dd/MM/yyyy - hh:mm:ss") + " KGP ]: " + msg.c_str();
-		// TODO: Write to file here
-		// TODO: Refactor to a class to handle logging
-	}
+	// Logging
+	constexpr char *LOG_FILE = "kgp.log";
 }

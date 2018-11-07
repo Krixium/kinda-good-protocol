@@ -24,5 +24,6 @@ public:
 
 protected:
 	void run() = 0;
+
 };
 
