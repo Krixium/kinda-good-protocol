@@ -1,6 +1,7 @@
 #pragma once
 
 #include "res.h"
+#include "DependancyManager.h"
 
 #include <QThread>
 #include <QUdpSocket>

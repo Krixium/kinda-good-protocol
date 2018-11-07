@@ -6,6 +6,8 @@ namespace kgp
 {
 	class Receiver : public Io
 	{
+	private:
+		kgp::State mCurrentState;
 	public:
 		Receiver(const bool running = true, QObject *parent = nullptr);
 		~Receiver() = default;

@@ -44,7 +44,7 @@ void kgp::Receiver::newDataHandler()
 		}
 
 		// If we are in the data sent state
-		if (mCurrentState.DATA_SND) 
+		if (mCurrentState.DATA_SEND) 
 		{
 
 		}
