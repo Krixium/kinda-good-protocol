@@ -1,13 +1,15 @@
 #pragma once
 
+#include "Io.h"
+
 #include <QThread>
 
 namespace kgp
 {
-	class Receiver : public QThread
+	class Receiver : public Io
 	{
 	public:
-		Receiver(QObject *parent = nullptr);
+		Receiver(const bool running = true, QObject *parent = nullptr);
 		~Receiver() = default;
 
 	protected:

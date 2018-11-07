@@ -5,6 +5,12 @@
     <ClCompile Include="KindaGoodProtocol.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Receiver.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Transmitter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Resource Files">
@@ -45,5 +51,22 @@
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="kinda-good-protocol.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Receiver.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="res.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Transmitter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Io.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="kinda-good-protocol.ico" />
   </ItemGroup>
 </Project>

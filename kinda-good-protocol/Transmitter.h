@@ -1,13 +1,15 @@
 #pragma once
 
+#include "Io.h"
+
 #include <QThread>
 
 namespace kgp
 {
-	class Transmitter : public QThread
+	class Transmitter : public Io
 	{
 	public:
-		Transmitter(QObject *parent = nullptr);
+		Transmitter(const bool running = true, QObject *parent = nullptr);
 		~Transmitter() = default;
 
 	protected:

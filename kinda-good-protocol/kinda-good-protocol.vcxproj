@@ -115,6 +115,8 @@
   <ItemGroup>
     <ClCompile Include="KindaGoodProtocol.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Receiver.cpp" />
+    <ClCompile Include="Transmitter.cpp" />
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="KindaGoodProtocol.h" />
@@ -127,6 +129,15 @@
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="kinda-good-protocol.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Io.h" />
+    <ClInclude Include="Receiver.h" />
+    <ClInclude Include="res.h" />
+    <ClInclude Include="Transmitter.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="kinda-good-protocol.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Condition="Exists('$(QtMsBuild)\qt.targets')">
