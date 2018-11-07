@@ -1,9 +1,10 @@
 #pragma once
 
-#include "res.h"
-
 #include <QThread>
 #include <QUdpSocket>
+
+#include "DependancyManager.h"
+#include "res.h"
 
 namespace kgp
 {
@@ -13,14 +14,14 @@ namespace kgp
 		bool mIsRunning;
 		QUdpSocket mSocket;
 
-		struct State mState;
+		struct State mCurrentState;
 
 	public:
 		inline Io(const bool running = true, QObject *parent = nullptr)
 			: QThread(parent)
 			, mIsRunning(running)
 			, mSocket(this)
-			, mState(DependancyManager::Instance().GetState())
+			, mCurrentState(DependancyManager::Instance().GetState())
 		{
 		}
 

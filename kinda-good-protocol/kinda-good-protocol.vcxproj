@@ -114,6 +114,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="DependancyManager.cpp" />
+    <ClCompile Include="FileAdapter.cpp" />
     <ClCompile Include="KindaGoodProtocol.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Receiver.cpp" />
@@ -133,6 +134,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DependancyManager.h" />
+    <ClInclude Include="FileAdapter.h" />
     <ClInclude Include="Io.h" />
     <ClInclude Include="Logger.h" />
     <ClInclude Include="Receiver.h" />

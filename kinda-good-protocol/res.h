@@ -21,18 +21,19 @@ namespace kgp
 	};
 
 	// Sizes
-	namespace size
+	namespace Size
 	{
 		constexpr size_t HEADER = sizeof(PacketHeader);
 		constexpr size_t PACKET = 1500;
 		constexpr size_t DATA = PACKET - HEADER;
+		constexpr size_t WINDOW = DATA * 10;
 	}
 
 	// Packet
 	struct Packet
 	{
 		struct PacketHeader Header;
-		char Data[size::DATA];
+		char Data[Size::DATA];
 	};
 
 	// Timeouts
@@ -57,7 +58,7 @@ namespace kgp
 		// Received data
 		bool DATA_RCV;
 		// Data sent, waiting for ACK
-		bool DATA_SEND;
+		bool DATA_SND;
 		// Data sent, no ACK received before timeout
 		bool RESEND;
 		// Receive timeout reached
