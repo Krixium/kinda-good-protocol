@@ -16,7 +16,7 @@ namespace kgp
 		Logger mLogger;
 
 	public:
-		static DependancyManager& Instance();
+		inline static DependancyManager& Instance() { return *instance; }
 
 		inline DependancyManager()
 		{
@@ -25,6 +25,7 @@ namespace kgp
 				initState();
 			}
 		}
+
 		~DependancyManager() = default;
 
 		inline State& GetState() { return mState; }

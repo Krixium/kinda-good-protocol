@@ -5,16 +5,13 @@
     <ClCompile Include="KindaGoodProtocol.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Receiver.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Transmitter.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="DependancyManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="FileAdapter.cpp">
+    <ClCompile Include="IoEngine.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SlidingWindow.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -44,6 +41,9 @@
     <QtMoc Include="KindaGoodProtocol.h">
       <Filter>Header Files</Filter>
     </QtMoc>
+    <QtMoc Include="IoEngine.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
   </ItemGroup>
   <ItemGroup>
     <QtUic Include="KindaGoodProtocol.ui">
@@ -59,16 +59,7 @@
     <ResourceCompile Include="kinda-good-protocol.rc" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Receiver.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="res.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Transmitter.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Io.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Logger.h">
@@ -77,11 +68,14 @@
     <ClInclude Include="DependancyManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="FileAdapter.h">
+    <ClInclude Include="SlidingWindow.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="kinda-good-protocol.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="cpp.hint" />
   </ItemGroup>
 </Project>
