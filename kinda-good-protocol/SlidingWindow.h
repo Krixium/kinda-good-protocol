@@ -29,6 +29,6 @@ namespace kgp
 		void BufferFile(QFile& file);
 
 		quint64 GetNextFrame(char *data);
-		void AckFrame(const Packet& packet);
+		void AckFrame(const quint64& ackNum);
 	};
 }
