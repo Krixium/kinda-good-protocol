@@ -6,10 +6,13 @@ namespace kgp
 	constexpr short PORT = 42069;
 
 	// Control characters
-	constexpr char DATA = 0x02;
-	constexpr char ACK = 0x05;
-	constexpr char EOT = 0x04;
-	constexpr char SYN = 0x15;
+	namespace PacketType
+	{
+		constexpr char DATA = 0x02;
+		constexpr char ACK = 0x05;
+		constexpr char EOT = 0x04;
+		constexpr char SYN = 0x15;
+	}
 
 	// Packet header
 	struct PacketHeader
@@ -47,23 +50,19 @@ namespace kgp
 	constexpr char *LOG_FILE = "kgp.log";
 
 	// Program state
-	struct State 
+	struct State
 	{
-		// SYN received, sent for ACK
+		// Waiting for SYN
 		bool IDLE;
-		// SYN sent, waiting for ACk
-		bool RDY_SND;
-		// SYN established, waiting for ACK or DATA
+		// Waiting for ACK for SYN
+		bool WAIT_SYN;
+		// Waiting for incoming data, EOT, or timeout
 		bool WAIT;
-		// Received data
-		bool DATA_RCV;
-		// Data sent, waiting for ACK
-		bool DATA_SND;
-		// Data sent, no ACK received before timeout
-		bool RESEND;
-		// Receive timeout reached
-		bool RX_TOR;
-		// WAIT timeout reached
-		bool IDLE_TOR;
+		// Waiting for ACK for Data or timeout
+		bool DATA_SENT;
+		// Has receive timeout been reached
+		bool RCV_TO;
+		// Has idle timeout been reached
+		bool IDLE_TO;
 	};
 }

@@ -7,9 +7,11 @@ KindaGoodProtocol::KindaGoodProtocol(QWidget *parent)
 {
 	ui.setupUi(this);
 	kgp::DependancyManager::Instance().GetLogger().Log("Main window initialized");
+	mIo.Start();
 }
 
 KindaGoodProtocol::~KindaGoodProtocol()
 {
 	kgp::DependancyManager::Instance().GetLogger().Log("Program exiting");
+	mIo.Stop();
 }
