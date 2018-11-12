@@ -31,6 +31,9 @@ namespace kgp
 		QTime mIdleTimeout;
 		SlidingWindow mWindow;
 
+		QHostAddress mClientAddress;
+		short mClientPort;
+
 	protected:
 		void run();
 
@@ -43,7 +46,7 @@ namespace kgp
 
 		void Reset();
 
-		void SendFile(const std::string& filename);
+		bool StartFileSend(const std::string& filename, const std::string& address, const short& port);
 
 	private:
 		inline void startRcvTimeout()
@@ -58,11 +61,52 @@ namespace kgp
 			mIdleTimeout = QTime::currentTime().addMSecs(Timeout::IDLE);
 		}
 
+		inline void clearRcvTimeout()
+		{
+			QMutexLocker locker(&mMutex);
+			mRcvTimeout = QTime::currentTime().addSecs(1000000);
+			mState.RCV_TO = false;
+		}
+
+		inline void clearIdleTimeout()
+		{
+			QMutexLocker locker(&mMutex);
+			mIdleTimeout = QTime::currentTime().addSecs(1000000);
+			mState.IDLE_TO = false;
+		}
+
 		inline void updateTimeout()
 		{
 			QMutexLocker locker(&mMutex);
 			if (QTime::currentTime() > mRcvTimeout) mState.RCV_TO = true;
 			if (QTime::currentTime() > mIdleTimeout) mState.IDLE_TO = true;
+		}
+
+		inline void createSynPacket(Packet *buffer)
+		{
+			memset(buffer, 0, sizeof(buffer));
+			buffer->Header.AckNumber = 0;
+			buffer->Header.SequenceNumber = 0;
+			buffer->Header.WindowSize = Size::WINDOW;
+			buffer->Header.PacketType = PacketType::SYN;
+		}
+
+		inline void send(const Packet& packet, const QHostAddress& address, const short& port)
+		{
+			mSocket.writeDatagram((char *)&packet, sizeof(packet), address, port);
+		}
+
+		inline void ackPacket(const Packet& incoming, const QHostAddress& sender, const short& port)
+		{
+			Packet res;
+			memset(&res, 0, sizeof(res));
+
+			res.Header.AckNumber = incoming.Header.SequenceNumber;
+			res.Header.SequenceNumber = 0;
+			res.Header.WindowSize = Size::WINDOW;
+			res.Header.PacketType = PacketType::ACK;
+
+			send(res, sender, port);
 		}
 
 	private slots:

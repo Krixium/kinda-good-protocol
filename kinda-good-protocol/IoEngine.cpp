@@ -9,6 +9,8 @@ kgp::IoEngine::IoEngine(const bool running, QObject *parent)
 	, mAckNum(0)
 	, mRcvTimeout(QTime::currentTime().addSecs(1000000))
 	, mIdleTimeout(QTime::currentTime().addSecs(1000000))
+	, mClientAddress(QHostAddress())
+	, mClientPort(0)
 {
 	mSocket.bind(QHostAddress::Any, PORT);
 	connect(&mSocket, &QUdpSocket::readyRead, this, &IoEngine::newDataHandler);
@@ -48,27 +50,52 @@ void kgp::IoEngine::Reset()
 	mAckNum = 0;
 	// Reset socket
 	mSocket.close();
+	mClientAddress = QHostAddress();
+	mClientPort = 0;
 	mSocket.bind(QHostAddress::Any, PORT);
 	// Reset timeouts
-	mRcvTimeout = QTime::currentTime().addSecs(1000000);
-	mIdleTimeout = QTime::currentTime().addSecs(1000000);
+	clearRcvTimeout();
+	clearIdleTimeout();
 	// Reset window
 	mWindow.Reset();
 }
 
-void kgp::IoEngine::SendFile(const std::string& filename)
+bool kgp::IoEngine::StartFileSend(const std::string& filename, const std::string& address, const short& port)
 {
-	DependancyManager::Instance().Logger().Log("Sending file " + filename);
 	QMutexLocker locker(&mMutex);
 
-	// Buffer file
-	QFile file(filename.c_str());
-	mWindow.BufferFile(file);
+	// If not already sending
+	if (!mState.DATA_SENT)
+	{
+		DependancyManager::Instance().Logger().Log("Sending file " + filename + " to " + address);
 
-	// Send SYN packet
+		// Buffer file
+		QFile file(filename.c_str());
+		mWindow.BufferFile(file);
 
-	// Set state
-	mState.WAIT_SYN = true;
+		// Set client
+		mClientAddress = QHostAddress(address.c_str());
+		mClientPort = port;
+
+		// Send SYN packet
+		Packet synPacket;
+		createSynPacket(&synPacket);
+		send(synPacket, mClientAddress, mClientPort);
+
+		// Start timeout
+		startRcvTimeout();
+
+		// Set state
+		mState.IDLE = false;
+		mState.WAIT_SYN = true;
+
+		return true;
+	}
+	else
+	{
+		DependancyManager::Instance().Logger().Error("Already sending");
+		return false;
+	}
 }
 
 void kgp::IoEngine::newDataHandler()
@@ -97,7 +124,14 @@ void kgp::IoEngine::newDataHandler()
 		case PacketType::SYN:
 			if (mState.IDLE)
 			{
-				// Valid SYN was received, handle it	
+				// ACK the SYN
+				ackPacket(buffer, sender, port);
+
+				// Transition state
+				mMutex.lock();
+				mState.IDLE = false;
+				mState.WAIT = true;
+				mMutex.unlock();
 			}
 			else
 			{
@@ -105,23 +139,32 @@ void kgp::IoEngine::newDataHandler()
 			}
 			break;
 		case PacketType::ACK:
-			if (mState.WAIT_SYN)
+			// If the ACK is for a SYN
+			if (buffer.Header.AckNumber == 0)
 			{
-				// Valid ACK received for sent SYN, handle it
+				if (mState.WAIT_SYN)
+				{
+					// Start sending
+					// TODO: implement
+				}
 			}
-			else if (mState.DATA_SENT)
-			{
-				// Valid ACK received for sent data, handle it
-			}
+			// If the ACK is for data
 			else
 			{
-				DependancyManager::Instance().Logger().Error("ACK received while in invalid state from " + sender.toString().toStdString());
+				if (mState.DATA_SENT)
+				{
+					// Continue sending
+					// TODO: implement
+				}
 			}
 			break;
 		case PacketType::DATA:
 			if (mState.WAIT)
 			{
-				// Valid Data was received, handle it
+				// TODO: Save the data somewhere
+
+				// ACK the packet
+				ackPacket(buffer, sender, port);
 			}
 			else
 			{
@@ -157,13 +200,21 @@ void kgp::IoEngine::run()
 		}
 
 		// If receive timeout has been reached
-		if (mState.RCV_TO) 
+		if (mState.RCV_TO)
 		{
 			DependancyManager::Instance().Logger().Log("Receive timeout reached");
 
-			// Resend last packet
+			// Reset if SYN timed out, otherwise resend all packets
+			if (mState.WAIT_SYN)
+			{
+				Reset();
+			}
+			else
+			{
+				// TODO: Resend all packets
+			}
 
-			mState.RCV_TO = false;
+			clearRcvTimeout();
 		}
 	}
 }
