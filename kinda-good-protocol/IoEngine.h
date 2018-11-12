@@ -25,7 +25,9 @@ namespace kgp
 
 		bool mRunning;
 		struct State mState;
+		// should we random this number before incrementing
 		int mSeqNum;
+		// how should this number work
 		int mAckNum;
 		QTime mRcvTimeout;
 		QTime mIdleTimeout;
