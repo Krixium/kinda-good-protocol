@@ -141,7 +141,7 @@ void kgp::IoEngine::sendFrames(std::vector<SlidingWindow::FrameWrapper> list, co
 		framePacket.Header.PacketType = PacketType::DATA;
 		framePacket.Header.SequenceNumber = frame.seqNum;
 		framePacket.Header.AckNumber = 0;
-		framePacket.Header.WindowSize = Size::WINDOW;
+		framePacket.Header.WindowSize = mWindow.GetWindowSize();
 		framePacket.Header.DataSize = frame.size;
 
 		memcpy(framePacket.Data, frame.data, frame.size);

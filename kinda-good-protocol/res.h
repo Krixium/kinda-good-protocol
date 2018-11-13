@@ -18,9 +18,9 @@ namespace kgp
 	struct PacketHeader
 	{
 		char PacketType;
-		unsigned int SequenceNumber;
-		unsigned int AckNumber;
-		unsigned int WindowSize;
+		quint64 SequenceNumber;
+		quint64 AckNumber;
+		quint64 WindowSize;
 		size_t DataSize;
 	};
 

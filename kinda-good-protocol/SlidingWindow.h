@@ -27,9 +27,11 @@ namespace kgp
 		QByteArray mBuffer;
 
 	public:
-
 		SlidingWindow(const quint64& size = Size::WINDOW);
 		~SlidingWindow() = default;
+
+		inline void SetWindowSize(const quint64 size) { mSize = size; }
+		inline quint64 GetWindowSize() { return mSize; }
 
 		inline void Reset()
 		{
