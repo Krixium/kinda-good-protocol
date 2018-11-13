@@ -3,21 +3,18 @@
 
 KindaGoodProtocol::KindaGoodProtocol(QWidget *parent)
 	: QMainWindow(parent)
-	, mTx(true, this)
-	, mRx(true, this)
+	, mIo(true, this)
 {
 	ui.setupUi(this);
+	kgp::DependancyManager::Instance().Logger().Log("Main window initialized");
+	mIo.Start();
 
-	mTx.Start();
-	mRx.Start();
-
-	mTx.Stop();
-	mRx.Stop();
-	
-	kgp::DependancyManager::Instance().GetLogger().Log("Main window initialized");
+	// Connect this to something to handle valid data
+	//connect(&mIo, &IoEngine::dataRead, , );
 }
 
 KindaGoodProtocol::~KindaGoodProtocol()
 {
-	kgp::DependancyManager::Instance().GetLogger().Log("Program exiting");
+	kgp::DependancyManager::Instance().Logger().Log("Program exiting");
+	mIo.Stop();
 }
