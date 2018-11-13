@@ -52,41 +52,80 @@ void kgp::SlidingWindow::BufferFile(QFile& file)
 --
 -- PROGRAMMER:              Benny Wang
 --
--- INTERFACE:				quint64 GetNextFrame(char *data)  
---								data: The buffer where data will be read into.
+-- INTERFACE:				  
 --
--- RETURN:					The ACK number required to ACK the data read into data. This is also the
---							current position of the pointer.
+-- RETURN:					
 --
 -- NOTES:
---							Zero outs data, then will as much data is available. If the remaining
---							window space is less than the size of the data portion in a packet, it
---							will read the rest of the window, otherwise it will read enough data to
---							fill the packet. After reading the pointer is advanced to the next unread
---							byte and is returned.
 --------------------------------------------------------------------------------------------------*/
-quint64 kgp::SlidingWindow::GetNextFrame(char *data)
+void kgp::SlidingWindow::GetNextFrames(std::vector<FrameWrapper>& list)
 {
-	// Clear buffer just in case
-	memset(data, 0, Size::DATA);
-
-	// If there is enough space in the window ...
-	if (mPointer + Size::DATA <= mHead + mSize)
+	// While there is still data that can be read
+	while (mPointer + Size::DATA <= mHead + mSize)
 	{
-		// Read data and increment the pointer
-		memcpy(data, mBuffer.data() + mPointer, Size::DATA);
-		mPointer += Size::DATA;
-	}
-	// If there is data remaining but less than Size::Data
-	else if (mHead + mSize - mPointer > 0)
-	{
-		const quint64 remaining = mHead + mSize - mPointer;
-		memcpy(data, mBuffer.data() + remaining, remaining);
-		mPointer += remaining;
-	}
+		FrameWrapper frameWrapper;
+		frameWrapper.seqNum = mPointer;
+		frameWrapper.data = mBuffer.data() + mPointer;
 
-	// return the window pointer
-	return mPointer;
+		// If remaining unread window data is less than default size
+		if (mHead + mSize - mPointer < Size::DATA)
+		{
+			// Size is the distance between end of window and pointer
+			frameWrapper.size = (mHead + mSize) - mPointer;
+			Q_ASSERT(frameWrapper.size < Size::DATA);
+		}
+		else
+		{
+			frameWrapper.size = Size::DATA;
+		}
+
+		// Increment pointer
+		mPointer += frameWrapper.size;
+	}
+}
+
+/*--------------------------------------------------------------------------------------------------
+-- FUNCTION:                GetPendingFrames
+--
+-- DATE:                    November 8, 2018
+--
+-- REVISIONS:               N/A
+--
+-- DESIGNER:                Benny Wang
+--
+-- PROGRAMMER:              Benny Wang
+--
+-- INTERFACE:				  
+--
+-- RETURN:					
+--
+-- NOTES:
+--------------------------------------------------------------------------------------------------*/
+void kgp::SlidingWindow::GetPendingFrames(std::vector<FrameWrapper>& list)
+{
+	quint64 tmpPointer = mHead;
+
+	while (tmpPointer <= mPointer)
+	{
+		FrameWrapper frameWrapper;
+		frameWrapper.seqNum = tmpPointer;
+		frameWrapper.data = mBuffer.data() + tmpPointer;
+
+		// If remaining unread window data is less than default size
+		if (mPointer - tmpPointer < Size::DATA)
+		{
+			// Size is distance between the two pointers
+			frameWrapper.size = mPointer - tmpPointer;
+			Q_ASSERT(frameWrapper.size < Size::DATA);
+		}
+		else
+		{
+			frameWrapper.size = Size::DATA;
+		}
+
+		// Increment pointer
+		tmpPointer += frameWrapper.size;
+	}
 }
 
 /*--------------------------------------------------------------------------------------------------
@@ -107,7 +146,7 @@ quint64 kgp::SlidingWindow::GetNextFrame(char *data)
 --							Will advance the head to the ACK number if it is valid. The pointer is 
 --							unchanged.
 --------------------------------------------------------------------------------------------------*/
-void kgp::SlidingWindow::AckFrame(const quint64& ackNum)
+bool kgp::SlidingWindow::AckFrame(const quint64& ackNum)
 {
 	// If sequence number of the acked frame is between the window head and the window pointer
 	if (ackNum > mHead && ackNum <= mPointer)
@@ -115,9 +154,11 @@ void kgp::SlidingWindow::AckFrame(const quint64& ackNum)
 		// Shift the window pointer
 		mHead = ackNum;
 		DependancyManager::Instance().Logger().Log("Advancing window head to " + QString::number(ackNum).toStdString());
+		return true;
 	}
 	else
 	{
 		DependancyManager::Instance().Logger().Log("Invalid sequence number " + QString::number(ackNum).toStdString() + " received");
+		return false;
 	}
 }

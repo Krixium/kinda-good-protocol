@@ -60,6 +60,16 @@ namespace kgp
 			DependancyManager::Instance().Logger().Log("\tData: " + data);
 		}
 
+		inline void logInvalidSender(const QHostAddress& sender, const short& port)
+		{
+			std::string expectedClient = mClientAddress.toString().toStdString();
+			std::string actualClient = sender.toString().toStdString();
+			std::string expectedPort = QString::number(port).toStdString();
+			std::string actualPort = QString::number(port).toStdString();
+			DependancyManager::Instance().Logger().Error("Expected Client: " + expectedClient + ", port: " + expectedPort);
+			DependancyManager::Instance().Logger().Error("Received Client: " + actualClient + ", port: " + actualPort);
+		}
+
 		inline void restartRcvTimer()
 		{
 			QMutexLocker locker(&mMutex);
@@ -90,11 +100,6 @@ namespace kgp
 			buffer->Header.PacketType = PacketType::SYN;
 		}
 
-		inline void send(const Packet& packet, const QHostAddress& address, const short& port)
-		{
-			mSocket.writeDatagram((char *)&packet, sizeof(packet), address, port);
-		}
-
 		inline void ackPacket(const Packet& incoming, const QHostAddress& sender, const short& port)
 		{
 			Packet res;
@@ -107,6 +112,18 @@ namespace kgp
 
 			send(res, sender, port);
 		}
+
+		inline void sendEot(const QHostAddress& receiver, const short& port)
+		{
+			Packet res;
+			memset(&res, 0, sizeof(res));
+			res.Header.PacketType = PacketType::EOT;
+			send(res, receiver, port);
+		}
+
+		void send(const Packet& packet, const QHostAddress& address, const short& port);
+		void sendFrames(std::vector<SlidingWindow::FrameWrapper> list, const QHostAddress& client, const short& port);
+		void sendWindow(const QHostAddress& client, const short& port);
 
 	private slots:
 		void newDataHandler();

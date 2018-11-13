@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vector>
+
 #include <QByteArray>
 #include <QFile>
 
@@ -9,6 +11,14 @@ namespace kgp
 {
 	class SlidingWindow
 	{
+	public:
+		struct FrameWrapper
+		{
+			quint64 seqNum;
+			size_t size;
+			char *data;
+		};
+
 	private:
 		quint64 mHead;
 		quint64 mSize;
@@ -17,6 +27,7 @@ namespace kgp
 		QByteArray mBuffer;
 
 	public:
+
 		SlidingWindow(const quint64& size = Size::WINDOW);
 		~SlidingWindow() = default;
 
@@ -26,9 +37,15 @@ namespace kgp
 			mBuffer.clear();
 		}
 
+		inline bool IsEOT()
+		{
+			return mBuffer.size() == mHead;
+		}
+
 		void BufferFile(QFile& file);
 
-		quint64 GetNextFrame(char *data);
-		void AckFrame(const quint64& ackNum);
+		void GetNextFrames(std::vector<FrameWrapper>& list);
+		void GetPendingFrames(std::vector<FrameWrapper>& list);
+		bool AckFrame(const quint64& ackNum);
 	};
 }

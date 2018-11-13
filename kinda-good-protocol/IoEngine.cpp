@@ -1,5 +1,7 @@
 #include "IoEngine.h"
 
+#include <vector>
+
 kgp::IoEngine::IoEngine(const bool running, QObject *parent)
 	: QThread(parent)
 	, mRunning(false)
@@ -93,6 +95,75 @@ bool kgp::IoEngine::StartFileSend(const std::string& filename, const std::string
 	}
 }
 
+void kgp::IoEngine::send(const Packet& packet, const QHostAddress& address, const short& port)
+{
+	{
+		mSocket.writeDatagram((char *)&packet, sizeof(packet), address, port);
+
+		std::string receiver = address.toString().toStdString();
+		std::string portStr = QString::number(port).toStdString();
+		std::string num;
+		std::string msg;
+
+		switch (packet.Header.PacketType)
+		{
+		case PacketType::SYN:
+			num = QString::number(packet.Header.SequenceNumber).toStdString();
+			msg = "Sending packet " + num + " to " + receiver + " on port " + portStr;
+			break;
+		case PacketType::ACK:
+			num = QString::number(packet.Header.AckNumber).toStdString();
+			msg = "ACKing packet " + num + " of " + receiver + " on port " + portStr;
+			break;
+		case PacketType::DATA:
+			num = QString::number(packet.Header.SequenceNumber).toStdString();
+			msg = "Sending data packet " + num + " to " + receiver + " on port " + portStr;
+			break;
+		case PacketType::EOT:
+			msg = "Terminating connection with " + receiver + " on port " + portStr;
+			break;
+		default:
+			Q_ASSERT(false);
+			break;
+		}
+
+		DependancyManager::Instance().Logger().Log(msg);
+	}
+}
+
+void kgp::IoEngine::sendFrames(std::vector<SlidingWindow::FrameWrapper> list, const QHostAddress& client, const short& port)
+{
+	for (auto frame : list)
+	{
+		Packet framePacket;
+		memset(&framePacket, 0, sizeof(framePacket));
+
+		framePacket.Header.PacketType = PacketType::DATA;
+		framePacket.Header.SequenceNumber = frame.seqNum;
+		framePacket.Header.AckNumber = 0;
+		framePacket.Header.WindowSize = Size::WINDOW;
+
+		memcpy(framePacket.Data, frame.data, frame.size);
+
+		send(framePacket, client, port);
+	}
+}
+
+void kgp::IoEngine::sendWindow(const QHostAddress& client, const short& port)
+{
+	if (mWindow.IsEOT())
+	{
+		sendEot(client, port);
+	}
+	else
+	{
+		std::vector<SlidingWindow::FrameWrapper> frames;
+		mWindow.GetNextFrames(frames);
+		sendFrames(frames, client, port);
+		restartRcvTimer();
+	}
+}
+
 void kgp::IoEngine::newDataHandler()
 {
 	while (mSocket.hasPendingDatagrams())
@@ -124,6 +195,8 @@ void kgp::IoEngine::newDataHandler()
 
 				// Transition state
 				mMutex.lock();
+				mClientAddress = sender;
+				mClientPort = port;
 				mState.IDLE = false;
 				mState.WAIT = true;
 				mMutex.unlock();
@@ -139,11 +212,19 @@ void kgp::IoEngine::newDataHandler()
 			{
 				if (mState.WAIT_SYN)
 				{
-					// Start sending
-
-					// TODO: implement
-
-					restartRcvTimer();
+					if (sender == mClientAddress && port == mClientPort)
+					{
+						// Start sending
+						sendWindow(sender, port);
+					}
+					else
+					{
+						logInvalidSender(sender, port);
+					}
+				}
+				else
+				{
+					DependancyManager::Instance().Logger().Error("ACK received for SYN while in invalid state from " + sender.toString().toStdString());
 				}
 			}
 			// If the ACK is for data
@@ -151,11 +232,22 @@ void kgp::IoEngine::newDataHandler()
 			{
 				if (mState.DATA_SENT)
 				{
-					// Continue sending
-
-					// TODO: implement
-
-					restartRcvTimer();
+					if (sender == mClientAddress && port == mClientPort)
+					{
+						// If ACK number was valid
+						if (mWindow.AckFrame(buffer.Header.AckNumber))
+						{
+							sendWindow(sender, port);
+						}
+						else
+						{
+							DependancyManager::Instance().Logger().Error("Unexpected ACK received(" + QString::number(buffer.Header.AckNumber).toStdString() + ")");
+						}
+					}
+					else
+					{
+						logInvalidSender(sender, port);
+					}
 				}
 			}
 			break;
@@ -214,7 +306,11 @@ void kgp::IoEngine::run()
 			}
 			else
 			{
-				// TODO: Resend all packets and restart receive timer
+				// Resend pending frames
+				std::vector<SlidingWindow::FrameWrapper> pendingFrames;
+				mWindow.GetPendingFrames(pendingFrames);
+				sendFrames(pendingFrames, mClientAddress, mClientPort);
+				restartRcvTimer();
 			}
 		}
 	}
