@@ -114,10 +114,10 @@ void kgp::SlidingWindow::AckFrame(const quint64& ackNum)
 	{
 		// Shift the window pointer
 		mHead = ackNum;
-		DependancyManager::Instance().GetLogger().Log("Advancing window head to " + QString::number(ackNum).toStdString());
+		DependancyManager::Instance().Logger().Log("Advancing window head to " + QString::number(ackNum).toStdString());
 	}
 	else
 	{
-		DependancyManager::Instance().GetLogger().Log("Invalid sequence number " + QString::number(ackNum).toStdString() + " received");
+		DependancyManager::Instance().Logger().Log("Invalid sequence number " + QString::number(ackNum).toStdString() + " received");
 	}
 }
