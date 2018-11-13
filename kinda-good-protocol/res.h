@@ -1,5 +1,7 @@
 #pragma once
 
+#include <QtGlobal>
+
 namespace kgp
 {
 	// Default port

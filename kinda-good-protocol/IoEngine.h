@@ -32,6 +32,7 @@ namespace kgp
 		QTime mRcvTimer;
 		QTime mIdleTimer;
 		SlidingWindow mWindow;
+		quint64 mRcvWindowSize;
 
 		QHostAddress mClientAddress;
 		short mClientPort;
@@ -49,6 +50,8 @@ namespace kgp
 		void Reset();
 
 		bool StartFileSend(const std::string& filename, const std::string& address, const short& port);
+
+		void SetReceiveWindowSize(quint64 size) { mRcvWindowSize = size; }
 
 	private:
 		inline void logDataPacket(const Packet& packet, const QHostAddress& sender)
@@ -96,7 +99,7 @@ namespace kgp
 			memset(buffer, 0, sizeof(buffer));
 			buffer->Header.AckNumber = 0;
 			buffer->Header.SequenceNumber = 0;
-			buffer->Header.WindowSize = mWindow.GetWindowSize();
+			buffer->Header.WindowSize = mRcvWindowSize;
 			buffer->Header.PacketType = PacketType::SYN;
 			buffer->Header.DataSize = 0;
 		}
@@ -107,13 +110,11 @@ namespace kgp
 			memset(&res, 0, sizeof(res));
 			res.Header.AckNumber = incoming.Header.SequenceNumber;
 			res.Header.SequenceNumber = 0;
-			res.Header.WindowSize = mWindow.GetWindowSize();
+			res.Header.WindowSize = mRcvWindowSize;
 			res.Header.PacketType = PacketType::ACK;
 			res.Header.DataSize = 0;
 
 			send(res, sender, port);
-
-			mWindow.SetWindowSize(incoming.Header.WindowSize);
 		}
 
 		inline void sendEot(const QHostAddress& receiver, const short& port)
@@ -123,7 +124,7 @@ namespace kgp
 			res.Header.PacketType = PacketType::EOT;
 			res.Header.SequenceNumber = 0;
 			res.Header.AckNumber = 0;
-			res.Header.WindowSize = mWindow.GetWindowSize();
+			res.Header.WindowSize = 0;
 			res.Header.DataSize = 0;
 			send(res, receiver, port);
 		}

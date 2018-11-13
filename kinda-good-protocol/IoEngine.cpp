@@ -13,6 +13,7 @@ kgp::IoEngine::IoEngine(const bool running, QObject *parent)
 	, mIdleTimer()
 	, mClientAddress(QHostAddress())
 	, mClientPort(0)
+	, mRcvWindowSize(Size::WINDOW)
 {
 	mSocket.bind(QHostAddress::Any, PORT);
 	connect(&mSocket, &QUdpSocket::readyRead, this, &IoEngine::newDataHandler);
@@ -97,38 +98,36 @@ bool kgp::IoEngine::StartFileSend(const std::string& filename, const std::string
 
 void kgp::IoEngine::send(const Packet& packet, const QHostAddress& address, const short& port)
 {
+	mSocket.writeDatagram((char *)&packet, sizeof(packet), address, port);
+
+	std::string receiver = address.toString().toStdString();
+	std::string portStr = QString::number(port).toStdString();
+	std::string num;
+	std::string msg;
+
+	switch (packet.Header.PacketType)
 	{
-		mSocket.writeDatagram((char *)&packet, sizeof(packet), address, port);
-
-		std::string receiver = address.toString().toStdString();
-		std::string portStr = QString::number(port).toStdString();
-		std::string num;
-		std::string msg;
-
-		switch (packet.Header.PacketType)
-		{
-		case PacketType::SYN:
-			num = QString::number(packet.Header.SequenceNumber).toStdString();
-			msg = "Sending packet " + num + " to " + receiver + " on port " + portStr;
-			break;
-		case PacketType::ACK:
-			num = QString::number(packet.Header.AckNumber).toStdString();
-			msg = "ACKing packet " + num + " of " + receiver + " on port " + portStr;
-			break;
-		case PacketType::DATA:
-			num = QString::number(packet.Header.SequenceNumber).toStdString();
-			msg = "Sending data packet " + num + " to " + receiver + " on port " + portStr;
-			break;
-		case PacketType::EOT:
-			msg = "Terminating connection with " + receiver + " on port " + portStr;
-			break;
-		default:
-			Q_ASSERT(false);
-			break;
-		}
-
-		DependancyManager::Instance().Logger().Log(msg);
+	case PacketType::SYN:
+		num = QString::number(packet.Header.SequenceNumber).toStdString();
+		msg = "Sending packet " + num + " to " + receiver + " on port " + portStr;
+		break;
+	case PacketType::ACK:
+		num = QString::number(packet.Header.AckNumber).toStdString();
+		msg = "ACKing packet " + num + " of " + receiver + " on port " + portStr;
+		break;
+	case PacketType::DATA:
+		num = QString::number(packet.Header.SequenceNumber).toStdString();
+		msg = "Sending data packet " + num + " to " + receiver + " on port " + portStr;
+		break;
+	case PacketType::EOT:
+		msg = "Terminating connection with " + receiver + " on port " + portStr;
+		break;
+	default:
+		Q_ASSERT(false);
+		break;
 	}
+
+	DependancyManager::Instance().Logger().Log(msg);
 }
 
 void kgp::IoEngine::sendFrames(std::vector<SlidingWindow::FrameWrapper> list, const QHostAddress& client, const short& port)
@@ -141,7 +140,7 @@ void kgp::IoEngine::sendFrames(std::vector<SlidingWindow::FrameWrapper> list, co
 		framePacket.Header.PacketType = PacketType::DATA;
 		framePacket.Header.SequenceNumber = frame.seqNum;
 		framePacket.Header.AckNumber = 0;
-		framePacket.Header.WindowSize = mWindow.GetWindowSize();
+		framePacket.Header.WindowSize = mRcvWindowSize;
 		framePacket.Header.DataSize = frame.size;
 
 		memcpy(framePacket.Data, frame.data, frame.size);
@@ -208,32 +207,27 @@ void kgp::IoEngine::newDataHandler()
 			}
 			break;
 		case PacketType::ACK:
-			// If the ACK is for a SYN
-			if (buffer.Header.AckNumber == 0)
+			if (sender == mClientAddress && port == mClientPort)
 			{
-				if (mState.WAIT_SYN)
+				// Adjust window size
+				mWindow.SetWindowSize(buffer.Header.WindowSize);
+
+				// If the ACK is for a SYN
+				if (buffer.Header.AckNumber == 0)
 				{
-					if (sender == mClientAddress && port == mClientPort)
+					if (mState.WAIT_SYN)
 					{
-						// Start sending
 						sendWindow(sender, port);
 					}
 					else
 					{
-						logInvalidSender(sender, port);
+						DependancyManager::Instance().Logger().Error("ACK received for SYN while in invalid state from " + sender.toString().toStdString());
 					}
 				}
+				// If the ACK is for data
 				else
 				{
-					DependancyManager::Instance().Logger().Error("ACK received for SYN while in invalid state from " + sender.toString().toStdString());
-				}
-			}
-			// If the ACK is for data
-			else
-			{
-				if (mState.DATA_SENT)
-				{
-					if (sender == mClientAddress && port == mClientPort)
+					if (mState.DATA_SENT)
 					{
 						// If ACK number was valid
 						if (mWindow.AckFrame(buffer.Header.AckNumber))
@@ -244,12 +238,13 @@ void kgp::IoEngine::newDataHandler()
 						{
 							DependancyManager::Instance().Logger().Error("Unexpected ACK received(" + QString::number(buffer.Header.AckNumber).toStdString() + ")");
 						}
-					}
-					else
-					{
-						logInvalidSender(sender, port);
+
 					}
 				}
+			}
+			else
+			{
+				logInvalidSender(sender, port);
 			}
 			break;
 		case PacketType::DATA:
