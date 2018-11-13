@@ -57,9 +57,15 @@ namespace kgp
 		inline void logDataPacket(const Packet& packet, const QHostAddress& sender)
 		{
 			std::string address(sender.toString().toStdString());
+			std::string packetType(QString::number((int)packet.Header.PacketType).toStdString());
+			std::string ackNum(QString::number(packet.Header.AckNumber).toStdString());
 			std::string seqNum(QString::number(packet.Header.SequenceNumber).toStdString());
+			std::string windowSize(QString::number(packet.Header.WindowSize).toStdString());
+			std::string dataSize(QString::number(packet.Header.DataSize).toStdString());
 			std::string data(QString(packet.Data).toStdString());
-			DependancyManager::Instance().Logger().Log("Sender: " + address + ", Sequence number: " + seqNum);
+			DependancyManager::Instance().Logger().Log("Sender: " + address + " \t Packet Type: " + packetType);
+			DependancyManager::Instance().Logger().Log("ACK #: " + ackNum + " \t Sequence #: " + seqNum);
+			DependancyManager::Instance().Logger().Log("Data Size: " + dataSize + " \t Window Size: " + windowSize);
 			DependancyManager::Instance().Logger().Log("\tData: " + data);
 		}
 

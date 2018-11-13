@@ -99,35 +99,7 @@ bool kgp::IoEngine::StartFileSend(const std::string& filename, const std::string
 void kgp::IoEngine::send(const Packet& packet, const QHostAddress& address, const short& port)
 {
 	mSocket.writeDatagram((char *)&packet, sizeof(packet), address, port);
-
-	std::string receiver = address.toString().toStdString();
-	std::string portStr = QString::number(port).toStdString();
-	std::string num;
-	std::string msg;
-
-	switch (packet.Header.PacketType)
-	{
-	case PacketType::SYN:
-		num = QString::number(packet.Header.SequenceNumber).toStdString();
-		msg = "Sending packet " + num + " to " + receiver + " on port " + portStr;
-		break;
-	case PacketType::ACK:
-		num = QString::number(packet.Header.AckNumber).toStdString();
-		msg = "ACKing packet " + num + " of " + receiver + " on port " + portStr;
-		break;
-	case PacketType::DATA:
-		num = QString::number(packet.Header.SequenceNumber).toStdString();
-		msg = "Sending data packet " + num + " to " + receiver + " on port " + portStr;
-		break;
-	case PacketType::EOT:
-		msg = "Terminating connection with " + receiver + " on port " + portStr;
-		break;
-	default:
-		Q_ASSERT(false);
-		break;
-	}
-
-	DependancyManager::Instance().Logger().Log(msg);
+	logDataPacket(packet, address);
 }
 
 void kgp::IoEngine::sendFrames(std::vector<SlidingWindow::FrameWrapper> list, const QHostAddress& client, const short& port)
@@ -183,6 +155,9 @@ void kgp::IoEngine::newDataHandler()
 
 		// Restart idle timeout
 		restartIdleTimer();
+
+		// Log receive packet here
+		logDataPacket(buffer, sender);
 
 		// Handle packet accordingly
 		switch (buffer.Header.PacketType)
@@ -252,8 +227,6 @@ void kgp::IoEngine::newDataHandler()
 			{
 				// Signal data was read
 				emit dataRead(buffer.Data, buffer.Header.DataSize);
-				// Log the packet
-				logDataPacket(buffer, sender);
 				// ACK the packet
 				ackPacket(buffer, sender, port);
 			}
