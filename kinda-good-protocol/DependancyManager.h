@@ -29,7 +29,7 @@ namespace kgp
 		~DependancyManager() = default;
 
 		inline State& GetState() { return mState; }
-		inline Logger& GetLogger() { return mLogger; }
+		inline Logger& Logger() { return mLogger; }
 
 	private:
 		inline void initState()
