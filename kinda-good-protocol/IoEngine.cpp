@@ -7,8 +7,8 @@ kgp::IoEngine::IoEngine(const bool running, QObject *parent)
 	, mState(DependancyManager::Instance().GetState())
 	, mSeqNum(0)
 	, mAckNum(0)
-	, mRcvTimeout(QTime::currentTime().addSecs(1000000))
-	, mIdleTimeout(QTime::currentTime().addSecs(1000000))
+	, mRcvTimer()
+	, mIdleTimer()
 	, mClientAddress(QHostAddress())
 	, mClientPort(0)
 {
@@ -54,8 +54,8 @@ void kgp::IoEngine::Reset()
 	mClientPort = 0;
 	mSocket.bind(QHostAddress::Any, PORT);
 	// Reset timeouts
-	clearRcvTimeout();
-	clearIdleTimeout();
+	restartRcvTimer();
+	restartIdleTimer();
 	// Reset window
 	mWindow.Reset();
 }
@@ -82,8 +82,9 @@ bool kgp::IoEngine::StartFileSend(const std::string& filename, const std::string
 		createSynPacket(&synPacket);
 		send(synPacket, mClientAddress, mClientPort);
 
-		// Start timeout
-		startRcvTimeout();
+		// Start timeouts
+		restartRcvTimer();
+		restartIdleTimer();
 
 		// Set state
 		mState.IDLE = false;
@@ -115,8 +116,8 @@ void kgp::IoEngine::newDataHandler()
 			continue;
 		}
 
-		// Not idle so extend timeout
-		startIdleTimeout();
+		// Restart idle timeout
+		restartIdleTimer();
 
 		// Handle packet accordingly
 		switch (buffer.Header.PacketType)
@@ -145,7 +146,10 @@ void kgp::IoEngine::newDataHandler()
 				if (mState.WAIT_SYN)
 				{
 					// Start sending
+
 					// TODO: implement
+
+					restartRcvTimer();
 				}
 			}
 			// If the ACK is for data
@@ -154,7 +158,10 @@ void kgp::IoEngine::newDataHandler()
 				if (mState.DATA_SENT)
 				{
 					// Continue sending
+
 					// TODO: implement
+
+					restartRcvTimer();
 				}
 			}
 			break;
@@ -190,7 +197,7 @@ void kgp::IoEngine::run()
 {
 	while (mRunning)
 	{
-		updateTimeout();
+		checkTimers();
 
 		// If idle timeout has been reached
 		if (mState.IDLE_TO)
@@ -211,10 +218,8 @@ void kgp::IoEngine::run()
 			}
 			else
 			{
-				// TODO: Resend all packets
+				// TODO: Resend all packets and restart receive timer
 			}
-
-			clearRcvTimeout();
 		}
 	}
 }

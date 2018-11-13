@@ -29,8 +29,8 @@ namespace kgp
 		int mSeqNum;
 		// how should this number work
 		int mAckNum;
-		QTime mRcvTimeout;
-		QTime mIdleTimeout;
+		QTime mRcvTimer;
+		QTime mIdleTimer;
 		SlidingWindow mWindow;
 
 		QHostAddress mClientAddress;
@@ -51,37 +51,25 @@ namespace kgp
 		bool StartFileSend(const std::string& filename, const std::string& address, const short& port);
 
 	private:
-		inline void startRcvTimeout()
+		inline void restartRcvTimer()
 		{
 			QMutexLocker locker(&mMutex);
-			mRcvTimeout = QTime::currentTime().addMSecs(Timeout::RCV);
-		}
-
-		inline void startIdleTimeout()
-		{
-			QMutexLocker locker(&mMutex);
-			mIdleTimeout = QTime::currentTime().addMSecs(Timeout::IDLE);
-		}
-
-		inline void clearRcvTimeout()
-		{
-			QMutexLocker locker(&mMutex);
-			mRcvTimeout = QTime::currentTime().addSecs(1000000);
+			mRcvTimer.start();
 			mState.RCV_TO = false;
 		}
 
-		inline void clearIdleTimeout()
+		inline void restartIdleTimer()
 		{
 			QMutexLocker locker(&mMutex);
-			mIdleTimeout = QTime::currentTime().addSecs(1000000);
+			mIdleTimer.start();
 			mState.IDLE_TO = false;
 		}
 
-		inline void updateTimeout()
+		inline void checkTimers()
 		{
 			QMutexLocker locker(&mMutex);
-			if (QTime::currentTime() > mRcvTimeout) mState.RCV_TO = true;
-			if (QTime::currentTime() > mIdleTimeout) mState.IDLE_TO = true;
+			if (mRcvTimer.elapsed() > Timeout::RCV) mState.RCV_TO = true;
+			if (mIdleTimer.elapsed() > Timeout::IDLE) mState.IDLE_TO = true;
 		}
 
 		inline void createSynPacket(Packet *buffer)
