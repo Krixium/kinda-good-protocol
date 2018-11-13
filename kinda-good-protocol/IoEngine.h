@@ -98,6 +98,7 @@ namespace kgp
 			buffer->Header.SequenceNumber = 0;
 			buffer->Header.WindowSize = Size::WINDOW;
 			buffer->Header.PacketType = PacketType::SYN;
+			buffer->Header.DataSize = 0;
 		}
 
 		inline void ackPacket(const Packet& incoming, const QHostAddress& sender, const short& port)
@@ -109,6 +110,7 @@ namespace kgp
 			res.Header.SequenceNumber = 0;
 			res.Header.WindowSize = Size::WINDOW;
 			res.Header.PacketType = PacketType::ACK;
+			res.Header.DataSize = 0;
 
 			send(res, sender, port);
 		}
@@ -118,6 +120,10 @@ namespace kgp
 			Packet res;
 			memset(&res, 0, sizeof(res));
 			res.Header.PacketType = PacketType::EOT;
+			res.Header.SequenceNumber = 0;
+			res.Header.AckNumber = 0;
+			res.Header.WindowSize = Size::WINDOW;
+			res.Header.DataSize = 0;
 			send(res, receiver, port);
 		}
 

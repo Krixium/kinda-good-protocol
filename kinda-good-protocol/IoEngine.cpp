@@ -142,6 +142,7 @@ void kgp::IoEngine::sendFrames(std::vector<SlidingWindow::FrameWrapper> list, co
 		framePacket.Header.SequenceNumber = frame.seqNum;
 		framePacket.Header.AckNumber = 0;
 		framePacket.Header.WindowSize = Size::WINDOW;
+		framePacket.Header.DataSize = frame.size;
 
 		memcpy(framePacket.Data, frame.data, frame.size);
 
@@ -255,7 +256,7 @@ void kgp::IoEngine::newDataHandler()
 			if (mState.WAIT)
 			{
 				// Signal data was read
-				emit dataRead(buffer.Data, sizeof(buffer.Data));
+				emit dataRead(buffer.Data, buffer.Header.DataSize);
 				// Log the packet
 				logDataPacket(buffer, sender);
 				// ACK the packet

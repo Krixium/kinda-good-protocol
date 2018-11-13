@@ -21,6 +21,7 @@ namespace kgp
 		unsigned int SequenceNumber;
 		unsigned int AckNumber;
 		unsigned int WindowSize;
+		size_t DataSize;
 	};
 
 	// Sizes
