@@ -6,12 +6,15 @@ KindaGoodProtocol::KindaGoodProtocol(QWidget *parent)
 	, mIo(true, this)
 {
 	ui.setupUi(this);
-	kgp::DependancyManager::Instance().GetLogger().Log("Main window initialized");
+	kgp::DependancyManager::Instance().Logger().Log("Main window initialized");
 	mIo.Start();
+
+	// Connect this to something to handle valid data
+	//connect(&mIo, &IoEngine::dataRead, , );
 }
 
 KindaGoodProtocol::~KindaGoodProtocol()
 {
-	kgp::DependancyManager::Instance().GetLogger().Log("Program exiting");
+	kgp::DependancyManager::Instance().Logger().Log("Program exiting");
 	mIo.Stop();
 }

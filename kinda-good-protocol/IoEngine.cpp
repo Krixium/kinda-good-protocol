@@ -68,28 +68,22 @@ bool kgp::IoEngine::StartFileSend(const std::string& filename, const std::string
 	if (!mState.DATA_SENT)
 	{
 		DependancyManager::Instance().Logger().Log("Sending file " + filename + " to " + address);
-
 		// Buffer file
 		QFile file(filename.c_str());
 		mWindow.BufferFile(file);
-
 		// Set client
 		mClientAddress = QHostAddress(address.c_str());
 		mClientPort = port;
-
 		// Send SYN packet
 		Packet synPacket;
 		createSynPacket(&synPacket);
 		send(synPacket, mClientAddress, mClientPort);
-
 		// Start timeouts
 		restartRcvTimer();
 		restartIdleTimer();
-
 		// Set state
 		mState.IDLE = false;
 		mState.WAIT_SYN = true;
-
 		return true;
 	}
 	else
@@ -168,8 +162,10 @@ void kgp::IoEngine::newDataHandler()
 		case PacketType::DATA:
 			if (mState.WAIT)
 			{
-				// TODO: Save the data somewhere
-
+				// Signal data was read
+				emit dataRead(buffer.Data, sizeof(buffer.Data));
+				// Log the packet
+				logDataPacket(buffer, sender);
 				// ACK the packet
 				ackPacket(buffer, sender, port);
 			}

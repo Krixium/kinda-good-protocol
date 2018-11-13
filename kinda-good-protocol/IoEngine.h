@@ -51,6 +51,15 @@ namespace kgp
 		bool StartFileSend(const std::string& filename, const std::string& address, const short& port);
 
 	private:
+		inline void logDataPacket(const Packet& packet, const QHostAddress& sender)
+		{
+			std::string address(sender.toString().toStdString());
+			std::string seqNum(QString::number(packet.Header.SequenceNumber).toStdString());
+			std::string data(QString(packet.Data).toStdString());
+			DependancyManager::Instance().Logger().Log("Sender: " + address + ", Sequence number: " + seqNum);
+			DependancyManager::Instance().Logger().Log("\tData: " + data);
+		}
+
 		inline void restartRcvTimer()
 		{
 			QMutexLocker locker(&mMutex);
@@ -101,6 +110,9 @@ namespace kgp
 
 	private slots:
 		void newDataHandler();
+
+	signals:
+		void dataRead(const char *data, const size_t& size);
 
 	};
 }
