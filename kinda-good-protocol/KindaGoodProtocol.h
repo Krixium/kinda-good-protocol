@@ -4,16 +4,14 @@
 #include "ui_KindaGoodProtocol.h"
 
 #include "Logger.h"
-#include "Transmitter.h"
-#include "Receiver.h"
+#include "IoEngine.h"
 
 class KindaGoodProtocol : public QMainWindow
 {
 	Q_OBJECT
 
 private:
-	kgp::Transmitter mTx;
-	kgp::Receiver mRx;
+	kgp::IoEngine mIo;
 
 public:
 	KindaGoodProtocol(QWidget *parent = Q_NULLPTR);

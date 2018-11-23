@@ -31,8 +31,19 @@ namespace kgp
 
 		inline void Log(const std::string& msg)
 		{
-			QString line("[ " + QDateTime::currentDateTime().toString("dd/MM/yyyy - hh:mm:ss") + " KGP ]: " + msg.c_str() + '\n');
+			QString line("[ " + QDateTime::currentDateTime().toString("dd/MM/yyyy - hh:mm:ss") + " Log ]: " + msg.c_str() + '\n');
+			write(line);
+		}
 
+		inline void Error(const std::string& msg)
+		{
+			QString line("[ " + QDateTime::currentDateTime().toString("dd/MM/yyyy - hh:mm:ss") + " Error ]: " + msg.c_str() + '\n');
+			write(line);
+		}
+
+	private:
+		inline void write(QString line)
+		{
 			qDebug() << line;
 			mLogFile.write(line.toStdString().c_str());
 		}
