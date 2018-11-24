@@ -28,14 +28,13 @@ namespace kgp
 
 		~DependancyManager() = default;
 
-		inline State& GetState() { return mState; }
 		inline Logger& Logger() { return mLogger; }
 
 	private:
 		inline void initState()
 		{
 			memset(&mState, 0, sizeof(struct State));
-			mState.IDLE = true;
+			mState.idle = true;
 		}
 	};
 }

@@ -55,17 +55,27 @@ namespace kgp
 	// Program state
 	struct State
 	{
+		// Running state of the thread
+		bool running;
+
+		// Current values of the sequence numbers
+		quint64 seqNum;
+		quint64 ackNum;
+
+		// Size of local receive window
+		quint64 rcvWindowSize;
+
 		// Waiting for SYN
-		bool IDLE;
+		bool idle;
 		// Waiting for ACK for SYN
-		bool WAIT_SYN;
+		bool waitSyn;
 		// Waiting for incoming data, EOT, or timeout
-		bool WAIT;
+		bool wait;
 		// Waiting for ACK for Data or timeout
-		bool DATA_SENT;
+		bool dataSent;
 		// Has receive timeout been reached
-		bool RCV_TO;
+		bool timeoutRcv;
 		// Has idle timeout been reached
-		bool IDLE_TO;
+		bool timeoutIdle;
 	};
 }

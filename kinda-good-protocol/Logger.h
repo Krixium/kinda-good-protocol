@@ -6,6 +6,7 @@
 #include <QDateTime>
 #include <QDebug>
 #include <QFile>
+#include <QHostAddress>
 
 #include "res.h"
 
@@ -40,6 +41,32 @@ namespace kgp
 			QString line("[ " + QDateTime::currentDateTime().toString("dd/MM/yyyy - hh:mm:ss") + " Error ]: " + msg.c_str() + '\n');
 			write(line);
 		}
+
+		inline void LogDataPacket(const Packet& packet, const QHostAddress& sender)
+		{
+			std::string address(sender.toString().toStdString());
+			std::string packetType(QString::number((int)packet.Header.PacketType).toStdString());
+			std::string ackNum(QString::number(packet.Header.AckNumber).toStdString());
+			std::string seqNum(QString::number(packet.Header.SequenceNumber).toStdString());
+			std::string windowSize(QString::number(packet.Header.WindowSize).toStdString());
+			std::string dataSize(QString::number(packet.Header.DataSize).toStdString());
+			std::string data(QString(packet.Data).toStdString());
+			Log("Sender: " + address + " \t Packet Type: " + packetType);
+			Log("ACK #: " + ackNum + " \t Sequence #: " + seqNum);
+			Log("Data Size: " + dataSize + " \t Window Size: " + windowSize);
+			Log("\tData: " + data);
+		}
+
+		inline void LogInvalidSender(const QHostAddress& expectedIp, const short& expectedPort, const QHostAddress& actualIp, const short& actualPort)
+		{
+			std::string strExpectedClient = expectedIp.toString().toStdString();
+			std::string strActualClient = actualIp.toString().toStdString();
+			std::string strExpectedPort = QString::number(expectedPort).toStdString();
+			std::string strActualPort = QString::number(actualPort).toStdString();
+			Error("Expected Client: " + strExpectedClient + ", port: " + strExpectedPort);
+			Error("Received Client: " + strActualClient + ", port: " + strActualPort);
+		}
+
 
 	private:
 		inline void write(QString line)

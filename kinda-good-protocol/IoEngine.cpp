@@ -4,17 +4,16 @@
 
 kgp::IoEngine::IoEngine(const bool running, QObject *parent)
 	: QThread(parent)
-	, mRunning(false)
 	, mSocket(this)
-	, mState(DependancyManager::Instance().GetState())
-	, mSeqNum(0)
-	, mAckNum(0)
+	, mState()
 	, mRcvTimer()
 	, mIdleTimer()
 	, mClientAddress(QHostAddress())
 	, mClientPort(0)
-	, mRcvWindowSize(Size::WINDOW)
 {
+	memset(&mState, 0, sizeof(mState));
+	mState.rcvWindowSize = Size::WINDOW;
+
 	mSocket.bind(QHostAddress::Any, PORT);
 	connect(&mSocket, &QUdpSocket::readyRead, this, &IoEngine::newDataHandler);
 
@@ -30,7 +29,7 @@ kgp::IoEngine::~IoEngine()
 void kgp::IoEngine::Start()
 {
 	DependancyManager::Instance().Logger().Log("Io Engine starting");
-	mRunning = true;
+	mState.running = true;
 	start();
 }
 
@@ -38,7 +37,7 @@ void kgp::IoEngine::Stop()
 {
 	DependancyManager::Instance().Logger().Log("Io Engine stopping");
 	QMutexLocker locker(&mMutex);
-	mRunning = false;
+	mState.running = true;
 }
 
 void kgp::IoEngine::Reset()
@@ -46,11 +45,11 @@ void kgp::IoEngine::Reset()
 	DependancyManager::Instance().Logger().Log("Io Engine resetting");
 	QMutexLocker locker(&mMutex);
 
-	// Reset state
+	// Reset state to idle state
 	memset(&mState, 0, sizeof(mState));
-	mState.IDLE = true;
-	mSeqNum = 0;
-	mAckNum = 0;
+	mState.running = true;
+	mState.idle = true;
+	mState.rcvWindowSize = Size::WINDOW;
 	// Reset socket
 	mSocket.close();
 	mClientAddress = QHostAddress();
@@ -68,7 +67,7 @@ bool kgp::IoEngine::StartFileSend(const std::string& filename, const std::string
 	QMutexLocker locker(&mMutex);
 
 	// If not already sending
-	if (!mState.DATA_SENT)
+	if (!mState.dataSent)
 	{
 		DependancyManager::Instance().Logger().Log("Sending file " + filename + " to " + address);
 		// Buffer file
@@ -85,8 +84,8 @@ bool kgp::IoEngine::StartFileSend(const std::string& filename, const std::string
 		restartRcvTimer();
 		restartIdleTimer();
 		// Set state
-		mState.IDLE = false;
-		mState.WAIT_SYN = true;
+		mState.idle = false;
+		mState.waitSyn = true;
 		return true;
 	}
 	else
@@ -99,7 +98,7 @@ bool kgp::IoEngine::StartFileSend(const std::string& filename, const std::string
 void kgp::IoEngine::send(const Packet& packet, const QHostAddress& address, const short& port)
 {
 	mSocket.writeDatagram((char *)&packet, sizeof(packet), address, port);
-	logDataPacket(packet, address);
+	DependancyManager::Instance().Logger().LogDataPacket(packet, address);
 }
 
 void kgp::IoEngine::sendFrames(std::vector<SlidingWindow::FrameWrapper> list, const QHostAddress& client, const short& port)
@@ -112,7 +111,7 @@ void kgp::IoEngine::sendFrames(std::vector<SlidingWindow::FrameWrapper> list, co
 		framePacket.Header.PacketType = PacketType::DATA;
 		framePacket.Header.SequenceNumber = frame.seqNum;
 		framePacket.Header.AckNumber = 0;
-		framePacket.Header.WindowSize = mRcvWindowSize;
+		framePacket.Header.WindowSize = mState.rcvWindowSize;
 		framePacket.Header.DataSize = frame.size;
 
 		memcpy(framePacket.Data, frame.data, frame.size);
@@ -157,13 +156,13 @@ void kgp::IoEngine::newDataHandler()
 		restartIdleTimer();
 
 		// Log receive packet here
-		logDataPacket(buffer, sender);
+		DependancyManager::Instance().Logger().LogDataPacket(buffer, sender);
 
 		// Handle packet accordingly
 		switch (buffer.Header.PacketType)
 		{
 		case PacketType::SYN:
-			if (mState.IDLE)
+			if (mState.idle)
 			{
 				// ACK the SYN
 				ackPacket(buffer, sender, port);
@@ -172,8 +171,8 @@ void kgp::IoEngine::newDataHandler()
 				mMutex.lock();
 				mClientAddress = sender;
 				mClientPort = port;
-				mState.IDLE = false;
-				mState.WAIT = true;
+				mState.idle = false;
+				mState.wait = true;
 				mMutex.unlock();
 			}
 			else
@@ -190,7 +189,7 @@ void kgp::IoEngine::newDataHandler()
 				// If the ACK is for a SYN
 				if (buffer.Header.AckNumber == 0)
 				{
-					if (mState.WAIT_SYN)
+					if (mState.waitSyn)
 					{
 						sendWindow(sender, port);
 					}
@@ -202,7 +201,7 @@ void kgp::IoEngine::newDataHandler()
 				// If the ACK is for data
 				else
 				{
-					if (mState.DATA_SENT)
+					if (mState.dataSent)
 					{
 						// If ACK number was valid
 						if (mWindow.AckFrame(buffer.Header.AckNumber))
@@ -219,16 +218,30 @@ void kgp::IoEngine::newDataHandler()
 			}
 			else
 			{
-				logInvalidSender(sender, port);
+				DependancyManager::Instance().Logger().LogInvalidSender(mClientAddress, mClientPort, sender, port);
 			}
 			break;
 		case PacketType::DATA:
-			if (mState.WAIT)
+			if (mState.wait)
 			{
-				// Signal data was read
-				emit dataRead(buffer.Data, buffer.Header.DataSize);
-				// ACK the packet
-				ackPacket(buffer, sender, port);
+				// Check if it was the correct packet
+				if (buffer.Header.SequenceNumber == mState.seqNum)
+				{
+					// Signal data was read
+					emit dataRead(buffer.Data, buffer.Header.DataSize);
+
+					// Increment sequence number counter
+					mState.seqNum += buffer.Header.DataSize;
+
+					// ACK the packet
+					ackPacket(buffer, sender, port);
+
+					DependancyManager::Instance().Logger().Log("Valid packet received");
+				}
+				else
+				{
+					DependancyManager::Instance().Logger().Error("Invalid packet received, expecting sequence number " + QString::number(mState.seqNum).toStdString());
+				}
 			}
 			else
 			{
@@ -236,7 +249,7 @@ void kgp::IoEngine::newDataHandler()
 			}
 			break;
 		case PacketType::EOT:
-			if (mState.WAIT)
+			if (mState.wait)
 			{
 				// Valid EOT was received so reset
 				Reset();
@@ -252,24 +265,24 @@ void kgp::IoEngine::newDataHandler()
 
 void kgp::IoEngine::run()
 {
-	while (mRunning)
+	while (mState.running)
 	{
 		checkTimers();
 
 		// If idle timeout has been reached
-		if (mState.IDLE_TO)
+		if (mState.timeoutIdle)
 		{
 			DependancyManager::Instance().Logger().Log("Idle timeout reached");
 			Reset();
 		}
 
 		// If receive timeout has been reached
-		if (mState.RCV_TO)
+		if (mState.timeoutRcv)
 		{
 			DependancyManager::Instance().Logger().Log("Receive timeout reached");
 
 			// Reset if SYN timed out, otherwise resend all packets
-			if (mState.WAIT_SYN)
+			if (mState.waitSyn)
 			{
 				Reset();
 			}

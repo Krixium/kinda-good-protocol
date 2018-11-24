@@ -20,22 +20,17 @@ namespace kgp
 		Q_OBJECT
 
 	private:
-		QUdpSocket mSocket;
 		QMutex mMutex;
 
-		bool mRunning;
 		struct State mState;
-		// should we random this number before incrementing
-		int mSeqNum;
-		// how should this number work
-		int mAckNum;
+		
+		QUdpSocket mSocket;
+		QHostAddress mClientAddress;
+		short mClientPort;
+
 		QTime mRcvTimer;
 		QTime mIdleTimer;
 		SlidingWindow mWindow;
-		quint64 mRcvWindowSize;
-
-		QHostAddress mClientAddress;
-		short mClientPort;
 
 	protected:
 		void run();
@@ -51,53 +46,28 @@ namespace kgp
 
 		bool StartFileSend(const std::string& filename, const std::string& address, const short& port);
 
-		void SetReceiveWindowSize(quint64 size) { mRcvWindowSize = size; }
+		void SetReceiveWindowSize(quint64 size) { mState.rcvWindowSize = size; }
 
 	private:
-		inline void logDataPacket(const Packet& packet, const QHostAddress& sender)
-		{
-			std::string address(sender.toString().toStdString());
-			std::string packetType(QString::number((int)packet.Header.PacketType).toStdString());
-			std::string ackNum(QString::number(packet.Header.AckNumber).toStdString());
-			std::string seqNum(QString::number(packet.Header.SequenceNumber).toStdString());
-			std::string windowSize(QString::number(packet.Header.WindowSize).toStdString());
-			std::string dataSize(QString::number(packet.Header.DataSize).toStdString());
-			std::string data(QString(packet.Data).toStdString());
-			DependancyManager::Instance().Logger().Log("Sender: " + address + " \t Packet Type: " + packetType);
-			DependancyManager::Instance().Logger().Log("ACK #: " + ackNum + " \t Sequence #: " + seqNum);
-			DependancyManager::Instance().Logger().Log("Data Size: " + dataSize + " \t Window Size: " + windowSize);
-			DependancyManager::Instance().Logger().Log("\tData: " + data);
-		}
-
-		inline void logInvalidSender(const QHostAddress& sender, const short& port)
-		{
-			std::string expectedClient = mClientAddress.toString().toStdString();
-			std::string actualClient = sender.toString().toStdString();
-			std::string expectedPort = QString::number(port).toStdString();
-			std::string actualPort = QString::number(port).toStdString();
-			DependancyManager::Instance().Logger().Error("Expected Client: " + expectedClient + ", port: " + expectedPort);
-			DependancyManager::Instance().Logger().Error("Received Client: " + actualClient + ", port: " + actualPort);
-		}
-
 		inline void restartRcvTimer()
 		{
 			QMutexLocker locker(&mMutex);
 			mRcvTimer.start();
-			mState.RCV_TO = false;
+			mState.timeoutRcv = false;
 		}
 
 		inline void restartIdleTimer()
 		{
 			QMutexLocker locker(&mMutex);
 			mIdleTimer.start();
-			mState.IDLE_TO = false;
+			mState.timeoutIdle = false;
 		}
 
 		inline void checkTimers()
 		{
 			QMutexLocker locker(&mMutex);
-			if (mRcvTimer.elapsed() > Timeout::RCV) mState.RCV_TO = true;
-			if (mIdleTimer.elapsed() > Timeout::IDLE) mState.IDLE_TO = true;
+			if (mRcvTimer.elapsed() > Timeout::RCV) mState.timeoutRcv = true;
+			if (mIdleTimer.elapsed() > Timeout::IDLE) mState.timeoutIdle = true;
 		}
 
 		inline void createSynPacket(Packet *buffer)
@@ -105,7 +75,7 @@ namespace kgp
 			memset(buffer, 0, sizeof(buffer));
 			buffer->Header.AckNumber = 0;
 			buffer->Header.SequenceNumber = 0;
-			buffer->Header.WindowSize = mRcvWindowSize;
+			buffer->Header.WindowSize = mState.rcvWindowSize;
 			buffer->Header.PacketType = PacketType::SYN;
 			buffer->Header.DataSize = 0;
 		}
@@ -116,7 +86,7 @@ namespace kgp
 			memset(&res, 0, sizeof(res));
 			res.Header.AckNumber = incoming.Header.SequenceNumber;
 			res.Header.SequenceNumber = 0;
-			res.Header.WindowSize = mRcvWindowSize;
+			res.Header.WindowSize = mState.rcvWindowSize;
 			res.Header.PacketType = PacketType::ACK;
 			res.Header.DataSize = 0;
 
