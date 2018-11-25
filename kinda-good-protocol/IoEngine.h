@@ -51,14 +51,12 @@ namespace kgp
 	private:
 		inline void restartRcvTimer()
 		{
-			QMutexLocker locker(&mMutex);
 			mRcvTimer.start();
 			mState.timeoutRcv = false;
 		}
 
 		inline void restartIdleTimer()
 		{
-			QMutexLocker locker(&mMutex);
 			mIdleTimer.start();
 			mState.timeoutIdle = false;
 		}
