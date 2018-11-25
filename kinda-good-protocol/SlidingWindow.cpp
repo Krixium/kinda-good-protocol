@@ -94,6 +94,7 @@ void kgp::SlidingWindow::GetNextFrames(std::vector<FrameWrapper>& list)
 
 		// Increment pointer
 		mPointer += frameWrapper.size;
+		list.push_back(frameWrapper);
 	}
 }
 

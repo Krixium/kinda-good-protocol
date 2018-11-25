@@ -188,7 +188,7 @@ void kgp::IoEngine::newDataHandler()
 			}
 			break;
 		case PacketType::ACK:
-			if (datagram.senderAddress() == mClientAddress && datagram.senderPort() == mClientPort)
+			if (datagram.senderAddress().toIPv4Address() == mClientAddress.toIPv4Address() && datagram.senderPort() == mClientPort)
 			{
 				// Adjust window size
 				mWindow.SetWindowSize(buffer.Header.WindowSize);
