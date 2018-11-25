@@ -44,7 +44,7 @@ namespace kgp
 			return mBuffer.size() == mHead;
 		}
 
-		void BufferFile(QFile& file);
+		bool BufferFile(QFile& file);
 
 		void GetNextFrames(std::vector<FrameWrapper>& list);
 		void GetPendingFrames(std::vector<FrameWrapper>& list);

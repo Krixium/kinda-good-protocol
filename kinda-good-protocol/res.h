@@ -5,7 +5,7 @@
 namespace kgp
 {
 	// Default port
-	constexpr short PORT = 42069;
+	constexpr short PORT = 8000;
 
 	// Control characters
 	namespace PacketType

@@ -21,24 +21,37 @@ kgp::SlidingWindow::SlidingWindow(const quint64& size)
 -- INTERFACE:				void BufferFile(QFile& file)  
 --								file: The file to buffer.
 --
+-- RETURN:
+--							False if the file could not be read, true otherwise.
+--
 -- NOTES:
 --							Reads the entire contents of the file and buffers it in memory. The
 --							given file will be opened by this function if a closed file is passed,
 --							and the file will always be closed after it is read.
 --------------------------------------------------------------------------------------------------*/
-void kgp::SlidingWindow::BufferFile(QFile& file)
+bool kgp::SlidingWindow::BufferFile(QFile& file)
 {
 	// Reset state of window
 	Reset();
 
 	// Open the file if needed
-	if (!file.isOpen()) file.open(QIODevice::ReadOnly);
+	if (!file.isOpen())
+	{
+		// Return false if the file could not be opened
+		if (!file.open(QIODevice::ReadOnly))
+		{
+			DependancyManager::Instance().Logger().Error("Could not buffer the file: " + file.fileName().toStdString());
+			return false;
+		}
+	}
 
 	// Read the entire file into the buffer
 	mBuffer.append(file.readAll());
 
 	// Close the file
 	file.close();
+
+	return true;
 }
 
 /*--------------------------------------------------------------------------------------------------

@@ -72,7 +72,8 @@ bool kgp::IoEngine::StartFileSend(const std::string& filename, const std::string
 		DependancyManager::Instance().Logger().Log("Sending file " + filename + " to " + address);
 		// Buffer file
 		QFile file(filename.c_str());
-		mWindow.BufferFile(file);
+		// Return false if the file could not be read
+		if (!mWindow.BufferFile(file)) return false;
 		// Set client
 		mClientAddress = QHostAddress(address.c_str());
 		mClientPort = port;

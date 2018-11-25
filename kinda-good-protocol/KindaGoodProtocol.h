@@ -20,4 +20,9 @@ public:
 private:
 	Ui::KindaGoodProtocolClass ui;
 
+private slots:
+	void startSend();
+
+	void writeBytesToFile(const char *data, const size_t& size);
+
 };
