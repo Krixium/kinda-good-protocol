@@ -2,13 +2,15 @@
 
 #include <vector>
 
+#include <QNetworkDatagram>
+
 kgp::IoEngine::IoEngine(const bool running, QObject *parent)
 	: QThread(parent)
 	, mSocket(this)
 	, mState()
 	, mRcvTimer()
 	, mIdleTimer()
-	, mClientAddress(QHostAddress())
+	, mClientAddress()
 	, mClientPort(0)
 {
 	memset(&mState, 0, sizeof(mState));
@@ -48,12 +50,12 @@ void kgp::IoEngine::Reset()
 	// Reset state to idle state
 	memset(&mState, 0, sizeof(mState));
 	mState.running = true;
-	mState.idle = true;
 	mState.rcvWindowSize = Size::WINDOW;
+	mState.idle = true;
 	// Reset socket
-	mSocket.close();
-	mClientAddress = QHostAddress();
+	mClientAddress.clear();
 	mClientPort = 0;
+	mSocket.reset();
 	mSocket.bind(QHostAddress::Any, PORT);
 	// Reset timeouts
 	restartRcvTimer();
@@ -75,7 +77,7 @@ bool kgp::IoEngine::StartFileSend(const std::string& filename, const std::string
 		// Return false if the file could not be read
 		if (!mWindow.BufferFile(file)) return false;
 		// Set client
-		mClientAddress = QHostAddress(address.c_str());
+		mClientAddress.setAddress(address.c_str());
 		mClientPort = port;
 		// Send SYN packet
 		Packet synPacket;
@@ -99,6 +101,7 @@ bool kgp::IoEngine::StartFileSend(const std::string& filename, const std::string
 void kgp::IoEngine::send(const Packet& packet, const QHostAddress& address, const short& port)
 {
 	mSocket.writeDatagram((char *)&packet, sizeof(packet), address, port);
+	DependancyManager::Instance().Logger().Log("Sending packet ...");
 	DependancyManager::Instance().Logger().LogDataPacket(packet, address);
 }
 
@@ -142,22 +145,25 @@ void kgp::IoEngine::newDataHandler()
 	{
 		// Read in packet
 		Packet buffer;
-		QHostAddress sender;
-		quint16 port;
-		quint64 sizeRead = mSocket.readDatagram((char *)&buffer, Size::DATA, &sender, &port);
+		//quint64 sizeRead = mSocket.readDatagram((char *)&buffer, Size::DATA, &sender, &port);
+		QNetworkDatagram datagram = mSocket.receiveDatagram();
+		
 
 		// If less than a header was read print error and continue
-		if (sizeRead < sizeof(struct PacketHeader))
+		if (datagram.data().size() < sizeof(struct PacketHeader))
 		{
-			DependancyManager::Instance().Logger().Error("Not enough data was read from " + sender.toString().toStdString());
+			DependancyManager::Instance().Logger().Error("Not enough data was read from " + datagram.senderAddress().toString().toStdString());
 			continue;
 		}
 
+		memcpy(&buffer, datagram.data().data(), datagram.data().size());
+		
 		// Restart idle timeout
 		restartIdleTimer();
 
 		// Log receive packet here
-		DependancyManager::Instance().Logger().LogDataPacket(buffer, sender);
+		DependancyManager::Instance().Logger().Log("Receiving packet ...");
+		DependancyManager::Instance().Logger().LogDataPacket(buffer, datagram.senderAddress());
 
 		// Handle packet accordingly
 		switch (buffer.Header.PacketType)
@@ -166,23 +172,23 @@ void kgp::IoEngine::newDataHandler()
 			if (mState.idle)
 			{
 				// ACK the SYN
-				ackPacket(buffer, sender, port);
+				ackPacket(buffer, datagram.senderAddress(), datagram.senderPort());
 
 				// Transition state
 				mMutex.lock();
-				mClientAddress = sender;
-				mClientPort = port;
+				mClientAddress = datagram.senderAddress();
+				mClientPort = datagram.senderPort();
 				mState.idle = false;
 				mState.wait = true;
 				mMutex.unlock();
 			}
 			else
 			{
-				DependancyManager::Instance().Logger().Error("SYN received while in invalid state from " + sender.toString().toStdString());
+				DependancyManager::Instance().Logger().Error("SYN received while in invalid state from " + datagram.senderAddress().toString().toStdString());
 			}
 			break;
 		case PacketType::ACK:
-			if (sender == mClientAddress && port == mClientPort)
+			if (datagram.senderAddress() == mClientAddress && datagram.senderPort() == mClientPort)
 			{
 				// Adjust window size
 				mWindow.SetWindowSize(buffer.Header.WindowSize);
@@ -192,11 +198,11 @@ void kgp::IoEngine::newDataHandler()
 				{
 					if (mState.waitSyn)
 					{
-						sendWindow(sender, port);
+						sendWindow(datagram.senderAddress(), datagram.senderPort());
 					}
 					else
 					{
-						DependancyManager::Instance().Logger().Error("ACK received for SYN while in invalid state from " + sender.toString().toStdString());
+						DependancyManager::Instance().Logger().Error("ACK received for SYN while in invalid state from " + datagram.senderAddress().toString().toStdString());
 					}
 				}
 				// If the ACK is for data
@@ -207,7 +213,7 @@ void kgp::IoEngine::newDataHandler()
 						// If ACK number was valid
 						if (mWindow.AckFrame(buffer.Header.AckNumber))
 						{
-							sendWindow(sender, port);
+							sendWindow(datagram.senderAddress(), datagram.senderPort());
 						}
 						else
 						{
@@ -219,7 +225,7 @@ void kgp::IoEngine::newDataHandler()
 			}
 			else
 			{
-				DependancyManager::Instance().Logger().LogInvalidSender(mClientAddress, mClientPort, sender, port);
+				DependancyManager::Instance().Logger().LogInvalidSender(mClientAddress, mClientPort, datagram.senderAddress(), datagram.senderPort());
 			}
 			break;
 		case PacketType::DATA:
@@ -235,7 +241,7 @@ void kgp::IoEngine::newDataHandler()
 					mState.seqNum += buffer.Header.DataSize;
 
 					// ACK the packet
-					ackPacket(buffer, sender, port);
+					ackPacket(buffer, datagram.senderAddress(), datagram.senderPort());
 
 					DependancyManager::Instance().Logger().Log("Valid packet received");
 				}
@@ -246,7 +252,7 @@ void kgp::IoEngine::newDataHandler()
 			}
 			else
 			{
-				DependancyManager::Instance().Logger().Error("Data received while in invalid state from " + sender.toString().toStdString());
+				DependancyManager::Instance().Logger().Error("Data received while in invalid state from " + datagram.senderAddress().toString().toStdString());
 			}
 			break;
 		case PacketType::EOT:
@@ -257,7 +263,7 @@ void kgp::IoEngine::newDataHandler()
 			}
 			else
 			{
-				DependancyManager::Instance().Logger().Error("EOT received while in invalid state from " + sender.toString().toStdString());
+				DependancyManager::Instance().Logger().Error("EOT received while in invalid state from " + datagram.senderAddress().toString().toStdString());
 			}
 			break;
 		}
@@ -266,6 +272,7 @@ void kgp::IoEngine::newDataHandler()
 
 void kgp::IoEngine::run()
 {
+	mState.idle = true;
 	while (mState.running)
 	{
 		checkTimers();

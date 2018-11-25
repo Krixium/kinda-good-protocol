@@ -23,13 +23,13 @@ namespace kgp
 		quint64 SequenceNumber;
 		quint64 AckNumber;
 		quint64 WindowSize;
-		size_t DataSize;
+		quint64 DataSize;
 	};
 
 	// Sizes
 	namespace Size
 	{
-		constexpr size_t HEADER = sizeof(PacketHeader);
+		constexpr size_t HEADER = sizeof(struct PacketHeader);
 		constexpr size_t PACKET = 1500;
 		constexpr size_t DATA = PACKET - HEADER;
 		constexpr size_t WINDOW = DATA * 10;

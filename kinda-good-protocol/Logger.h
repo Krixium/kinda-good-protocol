@@ -32,13 +32,13 @@ namespace kgp
 
 		inline void Log(const std::string& msg)
 		{
-			QString line("[ " + QDateTime::currentDateTime().toString("dd/MM/yyyy - hh:mm:ss") + " Log ]: " + msg.c_str() + '\n');
+			QString line("[ " + QDateTime::currentDateTime().toString("dd/MM/yyyy - hh:mm:ss") + " Log ]: " + msg.c_str());
 			write(line);
 		}
 
 		inline void Error(const std::string& msg)
 		{
-			QString line("[ " + QDateTime::currentDateTime().toString("dd/MM/yyyy - hh:mm:ss") + " Error ]: " + msg.c_str() + '\n');
+			QString line("[ " + QDateTime::currentDateTime().toString("dd/MM/yyyy - hh:mm:ss") + " Error ]: " + msg.c_str());
 			write(line);
 		}
 
@@ -51,9 +51,9 @@ namespace kgp
 			std::string windowSize(QString::number(packet.Header.WindowSize).toStdString());
 			std::string dataSize(QString::number(packet.Header.DataSize).toStdString());
 			std::string data(QString(packet.Data).toStdString());
-			Log("Sender: " + address + " \t Packet Type: " + packetType);
-			Log("ACK #: " + ackNum + " \t Sequence #: " + seqNum);
-			Log("Data Size: " + dataSize + " \t Window Size: " + windowSize);
+			Log("Address: " + address + "		Packet Type: " + packetType);
+			Log("ACK #: " + ackNum + "			Sequence #: " + seqNum);
+			Log("Data Size: " + dataSize + "	Window Size: " + windowSize);
 			Log("\tData: " + data);
 		}
 
@@ -72,7 +72,7 @@ namespace kgp
 		inline void write(QString line)
 		{
 			qDebug() << line;
-			mLogFile.write(line.toStdString().c_str());
+			mLogFile.write(line.toStdString().c_str() + '\n');
 		}
 	};
 }
