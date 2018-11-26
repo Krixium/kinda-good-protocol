@@ -48,17 +48,14 @@ void kgp::IoEngine::Reset()
 {
 	DependancyManager::Instance().Logger().Log("Io Engine resetting");
 	QMutexLocker locker(&mMutex);
-
 	// Reset state to idle state
 	memset(&mState, 0, sizeof(mState));
 	mState.running = true;
 	mState.rcvWindowSize = Size::WINDOW;
 	mState.idle = true;
-	// Reset socket
+	// Reset client values
 	mClientAddress.clear();
 	mClientPort = 0;
-	mSocket.reset();
-	mSocket.bind(QHostAddress::Any, PORT);
 	// Reset timeouts
 	restartRcvTimer();
 	restartIdleTimer();
