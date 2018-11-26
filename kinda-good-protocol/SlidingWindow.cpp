@@ -146,7 +146,6 @@ void kgp::SlidingWindow::GetPendingFrames(std::vector<FrameWrapper>& list)
 		{
 			// Size is distance between the two pointers
 			frameWrapper.size = mPointer - tmpPointer;
-			Q_ASSERT(frameWrapper.size < Size::DATA);
 		}
 		else
 		{
@@ -155,6 +154,7 @@ void kgp::SlidingWindow::GetPendingFrames(std::vector<FrameWrapper>& list)
 
 		// Increment pointer
 		tmpPointer += frameWrapper.size;
+		list.push_back(frameWrapper);
 	}
 }
 
