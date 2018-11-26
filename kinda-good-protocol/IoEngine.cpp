@@ -24,13 +24,14 @@ kgp::IoEngine::IoEngine(const bool running, QObject *parent)
 
 kgp::IoEngine::~IoEngine()
 {
-	mSocket.close();
 	DependancyManager::Instance().Logger().Log("Io Engine stopped");
+	mSocket.close();
 }
 
 void kgp::IoEngine::Start()
 {
 	DependancyManager::Instance().Logger().Log("Io Engine starting");
+	QMutexLocker locker(&mMutex);
 	mState.running = true;
 	start();
 }
@@ -39,7 +40,8 @@ void kgp::IoEngine::Stop()
 {
 	DependancyManager::Instance().Logger().Log("Io Engine stopping");
 	QMutexLocker locker(&mMutex);
-	mState.running = true;
+	mState.running = false;
+	exit();
 }
 
 void kgp::IoEngine::Reset()
