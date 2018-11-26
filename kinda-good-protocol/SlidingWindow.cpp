@@ -2,7 +2,7 @@
 #include "SlidingWindow.h"
 
 kgp::SlidingWindow::SlidingWindow(const quint64& size)
-	: mSize(size)
+	: mWindowSize(size)
 {
 	Reset();
 }
@@ -73,26 +73,42 @@ bool kgp::SlidingWindow::BufferFile(QFile& file)
 --------------------------------------------------------------------------------------------------*/
 void kgp::SlidingWindow::GetNextFrames(std::vector<FrameWrapper>& list)
 {
-	// While there is still data that can be read
-	while (mPointer + Size::DATA <= mHead + mSize)
+	FrameWrapper frameWrapper;
+
+	// While the pointer is less than the window size and less than buffer size
+	while (mPointer < mHead + mWindowSize && mPointer < mBuffer.size())
 	{
-		FrameWrapper frameWrapper;
+		memset(&frameWrapper, 0, sizeof(frameWrapper));
 		frameWrapper.seqNum = mPointer;
 		frameWrapper.data = mBuffer.data() + mPointer;
 
-		// If remaining unread window data is less than default size
-		if (mHead + mSize - mPointer < Size::DATA)
+		// If the window does not have enough space for a whole packet
+		if (mPointer + Size::DATA > mHead + mWindowSize)
 		{
-			// Size is the distance between end of window and pointer
-			frameWrapper.size = (mHead + mSize) - mPointer;
-			Q_ASSERT(frameWrapper.size < Size::DATA);
+			// Set the size to the remaining window size
+			frameWrapper.size = (mHead + mWindowSize) - mPointer;
+
+			// Check for buffer overflow
+			if (mPointer + frameWrapper.size > mBuffer.size())
+			{
+				frameWrapper.size = mBuffer.size() - mPointer;
+			}
 		}
+		// Normal case where the window has enough space for a whole packet
 		else
 		{
-			frameWrapper.size = Size::DATA;
+			// Check for buffer overflow
+			if (mPointer + Size::DATA > mBuffer.size())
+			{
+				frameWrapper.size = mBuffer.size() - mPointer;
+			}
+			else
+			{
+				frameWrapper.size = Size::DATA;
+			}
 		}
 
-		// Increment pointer
+		// Increment pointer and save the frame to the list
 		mPointer += frameWrapper.size;
 		list.push_back(frameWrapper);
 	}

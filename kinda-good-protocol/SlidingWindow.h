@@ -21,7 +21,7 @@ namespace kgp
 
 	private:
 		quint64 mHead;
-		quint64 mSize;
+		quint64 mWindowSize;
 		quint64 mPointer;
 
 		QByteArray mBuffer;
@@ -30,14 +30,15 @@ namespace kgp
 		SlidingWindow(const quint64& size = Size::WINDOW);
 		~SlidingWindow() = default;
 
-		inline void SetWindowSize(const quint64 size) { mSize = size; }
-		inline quint64 GetWindowSize() { return mSize; }
+		inline void SetWindowSize(const quint64 size) { mWindowSize = size; }
+		inline quint64 GetWindowSize() { return mWindowSize; }
 
 		inline void Reset()
 		{
 			mHead = mPointer = 0;
 			mBuffer.clear();
 		}
+		
 
 		inline bool IsEOT()
 		{
