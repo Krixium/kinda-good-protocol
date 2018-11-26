@@ -3,6 +3,7 @@
 #include <memory>
 #include <string>
 
+#include <QByteArray>
 #include <QDateTime>
 #include <QDebug>
 #include <QFile>
@@ -14,7 +15,7 @@ namespace kgp
 {
 	class Logger
 	{
-	public:
+	private:
 		QFile mLogFile;
 
 	public:
@@ -22,7 +23,9 @@ namespace kgp
 			: mLogFile(LOG_FILE)
 		{
 			if (mLogFile.isOpen()) mLogFile.close();
-			mLogFile.open(QIODevice::Append | QIODevice::Text);
+			mLogFile.open(QIODevice::WriteOnly | QIODevice::Text);
+
+
 		}
 
 		inline ~Logger()
@@ -33,13 +36,13 @@ namespace kgp
 		inline void Log(const std::string& msg)
 		{
 			QString line("[ " + QDateTime::currentDateTime().toString("dd/MM/yyyy - hh:mm:ss") + " Log ]: " + msg.c_str());
-			write(line);
+			writeToFile(line);
 		}
 
 		inline void Error(const std::string& msg)
 		{
 			QString line("[ " + QDateTime::currentDateTime().toString("dd/MM/yyyy - hh:mm:ss") + " Error ]: " + msg.c_str());
-			write(line);
+			writeToFile(line);
 		}
 
 		inline void LogDataPacket(const Packet& packet, const QHostAddress& sender)
@@ -69,10 +72,12 @@ namespace kgp
 
 
 	private:
-		inline void write(QString line)
+		inline void writeToFile(QString line)
 		{
 			qDebug() << line;
-			mLogFile.write(line.toStdString().c_str() + '\n');
+			mLogFile.write(line.toStdString().c_str());
+			mLogFile.write("\n");
+			mLogFile.flush();
 		}
 	};
 }
