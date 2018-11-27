@@ -277,6 +277,13 @@ void kgp::IoEngine::run()
 	{
 		checkTimers();
 
+		// Should do nothing if in idle state
+		if (mState.idle)
+		{
+			yieldCurrentThread();
+			continue;
+		}
+
 		// If idle timeout has been reached
 		if (mState.timeoutIdle)
 		{
