@@ -12,29 +12,14 @@ namespace kgp
 	private:
 		static std::unique_ptr<DependancyManager> instance;
 
-		State mState;
 		Logger mLogger;
 
 	public:
 		inline static DependancyManager& Instance() { return *instance; }
 
-		inline DependancyManager()
-		{
-			if (instance == nullptr)
-			{
-				initState();
-			}
-		}
-
+		inline DependancyManager() = default;
 		~DependancyManager() = default;
 
 		inline Logger& Logger() { return mLogger; }
-
-	private:
-		inline void initState()
-		{
-			memset(&mState, 0, sizeof(struct State));
-			mState.idle = true;
-		}
 	};
 }
