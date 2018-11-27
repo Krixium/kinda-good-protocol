@@ -12,6 +12,9 @@ class KindaGoodProtocol : public QMainWindow
 
 private:
 	kgp::IoEngine mIo;
+	
+	// TESTING ONLY
+	QFile *file;
 
 public:
 	KindaGoodProtocol(QWidget *parent = Q_NULLPTR);
