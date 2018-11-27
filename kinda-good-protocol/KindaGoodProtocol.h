@@ -16,6 +16,8 @@ private:
 	// TESTING ONLY
 	QFile *mFile;
 
+	QString mFileName;
+
 public:
 	KindaGoodProtocol(QWidget *parent = Q_NULLPTR);
 	~KindaGoodProtocol();
@@ -28,4 +30,5 @@ private slots:
 
 	void writeBytesToFile(const char *data, const size_t& size);
 
+	void selectFileToSend();
 };
