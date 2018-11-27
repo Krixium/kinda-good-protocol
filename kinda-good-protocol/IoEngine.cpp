@@ -127,10 +127,12 @@ void kgp::IoEngine::sendWindow(const QHostAddress& client, const short& port)
 {
 	if (mWindow.IsEOT())
 	{
+		DependancyManager::Instance().Logger().Log("Transmission finished, sending EOT");
 		sendEot(client, port);
 	}
 	else
 	{
+		DependancyManager::Instance().Logger().Log("Transmission unfinished, sending data");
 		std::vector<SlidingWindow::FrameWrapper> frames;
 		mWindow.GetNextFrames(frames);
 		sendFrames(frames, client, port);
@@ -172,7 +174,7 @@ void kgp::IoEngine::newDataHandler()
 			if (mState.idle)
 			{
 				// ACK the SYN
-				ackPacket(buffer, datagram.senderAddress(), datagram.senderPort());
+				ackPacket(buffer.Header.SequenceNumber, datagram.senderAddress(), datagram.senderPort());
 
 				// Transition state
 				mMutex.lock();
@@ -241,7 +243,7 @@ void kgp::IoEngine::newDataHandler()
 					mState.seqNum += buffer.Header.DataSize;
 
 					// ACK the packet
-					ackPacket(buffer, datagram.senderAddress(), datagram.senderPort());
+					ackPacket(buffer.Header.SequenceNumber, datagram.senderAddress(), datagram.senderPort());
 
 					DependancyManager::Instance().Logger().Log("Valid packet received");
 				}
@@ -259,6 +261,7 @@ void kgp::IoEngine::newDataHandler()
 			if (mState.wait)
 			{
 				// Valid EOT was received so reset
+				DependancyManager::Instance().Logger().Log("EOT received, resetting state");
 				Reset();
 			}
 			else
@@ -296,18 +299,34 @@ void kgp::IoEngine::run()
 		{
 			DependancyManager::Instance().Logger().Log("Receive timeout reached");
 
-			// Reset if SYN timed out, otherwise resend all packets
+			// If syn timed out
 			if (mState.waitSyn)
 			{
+				// Just reset
 				Reset();
 			}
-			else
+			// If data packet timed out
+			else if (mState.dataSent)
 			{
 				// Resend pending frames
 				std::vector<SlidingWindow::FrameWrapper> pendingFrames;
 				mWindow.GetPendingFrames(pendingFrames);
 				sendFrames(pendingFrames, mClientAddress, mClientPort);
 				restartRcvTimer();
+				restartIdleTimer();
+			}
+			// If ACKs timed out
+			else if (mState.wait)
+			{
+				// Resend all ACKs
+				ackPacket(mState.seqNum, mClientAddress, mClientPort);
+				restartRcvTimer();
+				restartIdleTimer();
+			}
+			else
+			{
+				// This should never happen
+				DependancyManager::Instance().Logger().Error("Receive timeout reached while in invalid state.");
 			}
 		}
 	}

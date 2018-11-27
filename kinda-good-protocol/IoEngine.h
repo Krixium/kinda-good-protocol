@@ -78,11 +78,11 @@ namespace kgp
 			buffer->Header.DataSize = 0;
 		}
 
-		inline void ackPacket(const Packet& incoming, const QHostAddress& sender, const short& port)
+		inline void ackPacket(const quint64& seqNum, const QHostAddress& sender, const short& port)
 		{
 			Packet res;
 			memset(&res, 0, sizeof(res));
-			res.Header.AckNumber = incoming.Header.SequenceNumber;
+			res.Header.AckNumber = seqNum;
 			res.Header.SequenceNumber = 0;
 			res.Header.WindowSize = mState.rcvWindowSize;
 			res.Header.PacketType = PacketType::ACK;
