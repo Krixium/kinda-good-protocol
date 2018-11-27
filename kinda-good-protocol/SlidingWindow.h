@@ -42,7 +42,7 @@ namespace kgp
 
 		inline bool IsEOT()
 		{
-			return mBuffer.size() == mHead;
+			return mBuffer.size() >= mHead;
 		}
 
 		bool BufferFile(QFile& file);
