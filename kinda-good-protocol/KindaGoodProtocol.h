@@ -14,7 +14,7 @@ private:
 	kgp::IoEngine mIo;
 	
 	// TESTING ONLY
-	QFile *file;
+	QFile *mFile;
 
 public:
 	KindaGoodProtocol(QWidget *parent = Q_NULLPTR);

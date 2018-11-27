@@ -135,6 +135,7 @@ void kgp::IoEngine::sendWindow(const QHostAddress& client, const short& port)
 		mWindow.GetNextFrames(frames);
 		sendFrames(frames, client, port);
 		restartRcvTimer();
+		mState.dataSent = true;
 	}
 }
 
