@@ -11,7 +11,7 @@ KindaGoodProtocol::KindaGoodProtocol(QWidget *parent)
 
 	// TESTING ONLY
 	mFile = new QFile("dump.txt");
-	mFile->open(QIODevice::WriteOnly | QIODevice::Text);
+	mFile->open(QIODevice::WriteOnly);
 	Q_ASSERT(mFile->isOpen() && mFile->isWritable());
 	// END
 
