@@ -19,10 +19,18 @@ namespace kgp
 			char *data;
 		};
 
+		struct LastPacketState
+		{
+			quint64 seqNum;
+			bool pending;
+			bool acked;
+		};
+
 	private:
 		quint64 mHead;
 		quint64 mWindowSize;
 		quint64 mPointer;
+		LastPacketState mLastPacketState;
 
 		QByteArray mBuffer;
 
@@ -37,12 +45,13 @@ namespace kgp
 		{
 			mHead = mPointer = 0;
 			mBuffer.clear();
+			memset(&mLastPacketState, 0, sizeof(mLastPacketState));
 		}
 		
 
 		inline bool IsEOT()
 		{
-			return mBuffer.size() >= mHead;
+			return mLastPacketState.acked;
 		}
 
 		bool BufferFile(QFile& file);

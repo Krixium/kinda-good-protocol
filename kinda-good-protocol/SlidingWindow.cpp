@@ -47,6 +47,7 @@ bool kgp::SlidingWindow::BufferFile(QFile& file)
 
 	// Read the entire file into the buffer
 	mBuffer.append(file.readAll());
+	DependancyManager::Instance().Logger().Log(QString::number(mBuffer.size()).toStdString() + " bytes were buffered");
 
 	// Close the file
 	file.close();
@@ -91,7 +92,11 @@ void kgp::SlidingWindow::GetNextFrames(std::vector<FrameWrapper>& list)
 			// Check for buffer overflow
 			if (mPointer + frameWrapper.size > mBuffer.size())
 			{
+				// Set the size
 				frameWrapper.size = mBuffer.size() - mPointer;
+				// Remember that last packet has been sent
+				mLastPacketState.pending = true;
+				mLastPacketState.seqNum = frameWrapper.seqNum;
 			}
 		}
 		// Normal case where the window has enough space for a whole packet
@@ -100,7 +105,11 @@ void kgp::SlidingWindow::GetNextFrames(std::vector<FrameWrapper>& list)
 			// Check for buffer overflow
 			if (mPointer + Size::DATA > mBuffer.size())
 			{
+				// Set the size
 				frameWrapper.size = mBuffer.size() - mPointer;
+				// Remember that last packet has been sent
+				mLastPacketState.pending = true;
+				mLastPacketState.seqNum = frameWrapper.seqNum;			
 			}
 			else
 			{
@@ -178,6 +187,18 @@ void kgp::SlidingWindow::GetPendingFrames(std::vector<FrameWrapper>& list)
 --------------------------------------------------------------------------------------------------*/
 bool kgp::SlidingWindow::AckFrame(const quint64& ackNum)
 {
+	// Check if last packet has been sent or not
+	if (mLastPacketState.pending)
+	{
+		// If the last packet was acked
+		if (ackNum == mLastPacketState.seqNum)
+		{
+			// Set the state to show that last packet has been sent and acked
+			mLastPacketState.pending = false;
+			mLastPacketState.acked = true;
+		}
+	}
+
 	// If sequence number of the acked frame is between the window head and the window pointer
 	if (ackNum > mHead && ackNum <= mPointer)
 	{
