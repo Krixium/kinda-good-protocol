@@ -11,11 +11,9 @@ KindaGoodProtocol::KindaGoodProtocol(QWidget *parent)
 {
 	ui.setupUi(this);
 
-	// TESTING ONLY
-	mFile = new QFile("dump.txt");
+	mFile = new QFile("output.txt");
 	mFile->open(QIODevice::WriteOnly);
 	Q_ASSERT(mFile->isOpen() && mFile->isWritable());
-	// END
 
 	kgp::DependancyManager::Instance().Logger().Log("Main window initialized");
 
@@ -29,10 +27,8 @@ KindaGoodProtocol::~KindaGoodProtocol()
 	kgp::DependancyManager::Instance().Logger().Log("Program exiting");
 	mIo.Stop();
 
-	// TEST ONLY
 	mFile->close();
 	delete mFile;
-	// END
 }
 
 void KindaGoodProtocol::startSend()
