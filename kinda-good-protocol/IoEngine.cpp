@@ -234,19 +234,22 @@ void kgp::IoEngine::newDataHandler()
 		case PacketType::DATA:
 			if (mState.wait)
 			{
-				// Check if it was the correct packet
-				if (buffer.Header.SequenceNumber == mState.seqNum)
+				// Check if it is the incoming packet is a previous packet or next packet
+				if (buffer.Header.SequenceNumber <= mState.seqNum)
 				{
-					// Signal data was read
-					emit dataRead(buffer.Data, buffer.Header.DataSize);
+					DependancyManager::Instance().Logger().Log("Valid packet received");
 
-					// Increment sequence number counter
-					mState.seqNum += buffer.Header.DataSize;
-
-					// ACK the packet
+					// Always ACK a valid packet
 					ackPacket(buffer.Header.SequenceNumber, datagram.senderAddress(), datagram.senderPort());
 
-					DependancyManager::Instance().Logger().Log("Valid packet received");
+					// If it was new data
+					if (buffer.Header.SequenceNumber == mState.seqNum)
+					{
+						// Signal new data was read
+						emit dataRead(buffer.Data, buffer.Header.DataSize);
+						// Increment sequence number counter
+						mState.seqNum += buffer.Header.DataSize;
+					}
 				}
 				else
 				{

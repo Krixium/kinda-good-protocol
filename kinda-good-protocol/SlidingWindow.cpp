@@ -164,6 +164,8 @@ void kgp::SlidingWindow::GetPendingFrames(std::vector<FrameWrapper>& list)
 		// Increment pointer
 		tmpPointer += frameWrapper.size;
 		list.push_back(frameWrapper);
+
+		if (tmpPointer == mPointer) break;
 	}
 }
 
@@ -199,11 +201,14 @@ bool kgp::SlidingWindow::AckFrame(const quint64& ackNum)
 		}
 	}
 
-	// If sequence number of the acked frame is between the window head and the window pointer
-	if (ackNum > mHead && ackNum <= mPointer)
+	// ACK could be for any packet that was sent previously
+	if (ackNum <= mPointer)
 	{
-		// Shift the window pointer
-		mHead = ackNum;
+		// If ACK was for a packet in our window, shift the window
+		if (ackNum > mHead)
+		{
+			mHead = ackNum;
+		}
 		DependancyManager::Instance().Logger().Log("Advancing window head to " + QString::number(ackNum).toStdString());
 		return true;
 	}

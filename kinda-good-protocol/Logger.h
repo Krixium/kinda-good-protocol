@@ -77,7 +77,6 @@ namespace kgp
 			qDebug() << line;
 			mLogFile.write(line.toStdString().c_str());
 			mLogFile.write("\n");
-			mLogFile.flush();
 		}
 	};
 }
