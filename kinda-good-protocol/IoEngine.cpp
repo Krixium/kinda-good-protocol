@@ -31,16 +31,12 @@ kgp::IoEngine::~IoEngine()
 void kgp::IoEngine::Start()
 {
 	DependancyManager::Instance().Logger().Log("Io Engine starting");
-	QMutexLocker locker(&mMutex);
-	mState.running = true;
 	start();
 }
 
 void kgp::IoEngine::Stop()
 {
 	DependancyManager::Instance().Logger().Log("Io Engine stopping");
-	QMutexLocker locker(&mMutex);
-	mState.running = false;
 	exit();
 }
 
@@ -50,7 +46,6 @@ void kgp::IoEngine::Reset()
 	QMutexLocker locker(&mMutex);
 	// Reset state to idle state
 	memset(&mState, 0, sizeof(mState));
-	mState.running = true;
 	mState.rcvWindowSize = Size::WINDOW;
 	mState.idle = true;
 	// Reset client values
@@ -61,6 +56,8 @@ void kgp::IoEngine::Reset()
 	restartIdleTimer();
 	// Reset window
 	mWindow.Reset();
+	// Stop the thread
+	Stop();
 }
 
 bool kgp::IoEngine::StartFileSend(const std::string& filename, const std::string& address, const short& port)
@@ -88,6 +85,8 @@ bool kgp::IoEngine::StartFileSend(const std::string& filename, const std::string
 		// Set state
 		mState.idle = false;
 		mState.waitSyn = true;
+		// Start the thread
+		Start();
 		return true;
 	}
 	else
@@ -150,7 +149,7 @@ void kgp::IoEngine::newDataHandler()
 		Packet buffer;
 		//quint64 sizeRead = mSocket.readDatagram((char *)&buffer, Size::DATA, &sender, &port);
 		QNetworkDatagram datagram = mSocket.receiveDatagram();
-		
+
 
 		// If less than a header was read print error and continue
 		if (datagram.data().size() < sizeof(struct PacketHeader))
@@ -160,7 +159,7 @@ void kgp::IoEngine::newDataHandler()
 		}
 
 		memcpy(&buffer, datagram.data().data(), datagram.data().size());
-		
+
 		// Restart idle timeout
 		restartIdleTimer();
 
@@ -174,16 +173,15 @@ void kgp::IoEngine::newDataHandler()
 		case PacketType::SYN:
 			if (mState.idle)
 			{
-				// ACK the SYN
-				ackPacket(buffer.Header.SequenceNumber, datagram.senderAddress(), datagram.senderPort());
-
 				// Transition state
-				mMutex.lock();
 				mClientAddress = datagram.senderAddress();
 				mClientPort = datagram.senderPort();
 				mState.idle = false;
 				mState.wait = true;
-				mMutex.unlock();
+				// Start thread
+				Start();
+				// ACK the SYN
+				ackPacket(buffer.Header.SequenceNumber, datagram.senderAddress(), datagram.senderPort());
 			}
 			else
 			{
@@ -276,17 +274,10 @@ void kgp::IoEngine::newDataHandler()
 
 void kgp::IoEngine::run()
 {
-	mState.idle = true;
-	while (mState.running)
+	// Only run when there is a connection and not idle
+	while (!mState.idle)
 	{
 		checkTimers();
-
-		// Should do nothing if in idle state
-		if (mState.idle)
-		{
-			yieldCurrentThread();
-			continue;
-		}
 
 		// If idle timeout has been reached
 		if (mState.timeoutIdle)

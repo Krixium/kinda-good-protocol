@@ -16,7 +16,6 @@ KindaGoodProtocol::KindaGoodProtocol(QWidget *parent)
 	// END
 
 	kgp::DependancyManager::Instance().Logger().Log("Main window initialized");
-	mIo.Start();
 
 	connect(&mIo, &kgp::IoEngine::dataRead, this, &KindaGoodProtocol::writeBytesToFile);
 	connect(ui.buttonSend, &QPushButton::pressed, this, &KindaGoodProtocol::startSend);

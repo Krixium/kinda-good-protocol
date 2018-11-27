@@ -55,9 +55,6 @@ namespace kgp
 	// Program state
 	struct State
 	{
-		// Running state of the thread
-		bool running;
-
 		// Current values of the sequence numbers
 		quint64 seqNum;
 		quint64 ackNum;
