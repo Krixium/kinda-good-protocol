@@ -42,11 +42,11 @@ namespace kgp
 		char Data[Size::DATA];
 	};
 
-	// Timeouts
+	// Timeouts in milliseconds
 	namespace Timeout
 	{
-		constexpr int IDLE = 10 * 1000;
-		constexpr int RCV = 5 * 1000;
+		constexpr int IDLE = 20 * 1000;
+		constexpr int RCV = 0.5 * 1000;
 	}
 
 	// Logging

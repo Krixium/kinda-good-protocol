@@ -11,7 +11,7 @@ KindaGoodProtocol::KindaGoodProtocol(QWidget *parent)
 
 	// TESTING ONLY
 	mFile = new QFile("dump.txt");
-	mFile->open(QIODevice::WriteOnly | QIODevice::Text);
+	mFile->open(QIODevice::WriteOnly);
 	Q_ASSERT(mFile->isOpen() && mFile->isWritable());
 	// END
 
@@ -34,7 +34,7 @@ KindaGoodProtocol::~KindaGoodProtocol()
 
 void KindaGoodProtocol::startSend()
 {
-	mIo.StartFileSend("alice.txt", "192.168.0.18", kgp::PORT);
+	mIo.StartFileSend("alice.txt", "192.168.0.20", kgp::PORT);
 }
 
 void KindaGoodProtocol::writeBytesToFile(const char *data, const size_t& size)

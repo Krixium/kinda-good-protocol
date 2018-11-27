@@ -8,6 +8,9 @@
 #include <QDebug>
 #include <QFile>
 #include <QHostAddress>
+#include <QMutex>
+#include <QMutexLocker>
+#include <QObject>
 
 #include "res.h"
 
@@ -17,15 +20,15 @@ namespace kgp
 	{
 	private:
 		QFile mLogFile;
+		QMutex mMutex;
 
 	public:
 		inline Logger()
 			: mLogFile(LOG_FILE)
 		{
+
 			if (mLogFile.isOpen()) mLogFile.close();
-			mLogFile.open(QIODevice::WriteOnly | QIODevice::Text);
-
-
+			mLogFile.open(QIODevice::WriteOnly);
 		}
 
 		inline ~Logger()
@@ -36,13 +39,13 @@ namespace kgp
 		inline void Log(const std::string& msg)
 		{
 			QString line("[ " + QDateTime::currentDateTime().toString("dd/MM/yyyy - hh:mm:ss") + " Log ]: " + msg.c_str());
-			writeToFile(line);
+			emit write(line);
 		}
 
 		inline void Error(const std::string& msg)
 		{
 			QString line("[ " + QDateTime::currentDateTime().toString("dd/MM/yyyy - hh:mm:ss") + " Error ]: " + msg.c_str());
-			writeToFile(line);
+			emit write(line);
 		}
 
 		inline void LogDataPacket(const Packet& packet, const QHostAddress& sender)
@@ -70,14 +73,13 @@ namespace kgp
 			Error("Received Client: " + strActualClient + ", port: " + strActualPort);
 		}
 
-
 	private:
-		inline void writeToFile(QString line)
+		inline void write(QString& line)
 		{
+			QMutexLocker locker(&mMutex);
 			qDebug() << line;
 			mLogFile.write(line.toStdString().c_str());
 			mLogFile.write("\n");
-			mLogFile.flush();
 		}
 	};
 }

@@ -200,6 +200,7 @@ void kgp::IoEngine::newDataHandler()
 				{
 					if (mState.waitSyn)
 					{
+						mState.waitSyn = false;
 						sendWindow(datagram.senderAddress(), datagram.senderPort());
 					}
 					else
@@ -233,19 +234,22 @@ void kgp::IoEngine::newDataHandler()
 		case PacketType::DATA:
 			if (mState.wait)
 			{
-				// Check if it was the correct packet
-				if (buffer.Header.SequenceNumber == mState.seqNum)
+				// Check if it is the incoming packet is a previous packet or next packet
+				if (buffer.Header.SequenceNumber <= mState.seqNum)
 				{
-					// Signal data was read
-					emit dataRead(buffer.Data, buffer.Header.DataSize);
+					DependancyManager::Instance().Logger().Log("Valid packet received");
 
-					// Increment sequence number counter
-					mState.seqNum += buffer.Header.DataSize;
-
-					// ACK the packet
+					// Always ACK a valid packet
 					ackPacket(buffer.Header.SequenceNumber, datagram.senderAddress(), datagram.senderPort());
 
-					DependancyManager::Instance().Logger().Log("Valid packet received");
+					// If it was new data
+					if (buffer.Header.SequenceNumber == mState.seqNum)
+					{
+						// Signal new data was read
+						emit dataRead(buffer.Data, buffer.Header.DataSize);
+						// Increment sequence number counter
+						mState.seqNum += buffer.Header.DataSize;
+					}
 				}
 				else
 				{
@@ -302,6 +306,7 @@ void kgp::IoEngine::run()
 			else if (mState.dataSent)
 			{
 				// Resend pending frames
+				DependancyManager::Instance().Logger().Log("Resending pending packets");
 				std::vector<SlidingWindow::FrameWrapper> pendingFrames;
 				mWindow.GetPendingFrames(pendingFrames);
 				sendFrames(pendingFrames, mClientAddress, mClientPort);
@@ -311,6 +316,7 @@ void kgp::IoEngine::run()
 			// If ACKs timed out
 			else if (mState.wait)
 			{
+				DependancyManager::Instance().Logger().Log("Resending ACK");
 				// Resend all ACKs
 				ackPacket(mState.seqNum, mClientAddress, mClientPort);
 				restartRcvTimer();
