@@ -34,7 +34,7 @@ KindaGoodProtocol::~KindaGoodProtocol()
 
 void KindaGoodProtocol::startSend()
 {
-	mIo.StartFileSend("alice.txt", "192.168.0.101", kgp::PORT);
+	mIo.StartFileSend("alice.txt", "192.168.0.18", kgp::PORT);
 }
 
 void KindaGoodProtocol::writeBytesToFile(const char *data, const size_t& size)

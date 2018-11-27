@@ -15,6 +15,7 @@ kgp::IoEngine::IoEngine(const bool running, QObject *parent)
 {
 	memset(&mState, 0, sizeof(mState));
 	mState.rcvWindowSize = Size::WINDOW;
+	mState.idle = true;
 
 	mSocket.bind(QHostAddress::Any, PORT);
 	connect(&mSocket, &QUdpSocket::readyRead, this, &IoEngine::newDataHandler);
