@@ -200,6 +200,7 @@ void kgp::IoEngine::newDataHandler()
 				{
 					if (mState.waitSyn)
 					{
+						mState.waitSyn = false;
 						sendWindow(datagram.senderAddress(), datagram.senderPort());
 					}
 					else
@@ -302,6 +303,7 @@ void kgp::IoEngine::run()
 			else if (mState.dataSent)
 			{
 				// Resend pending frames
+				DependancyManager::Instance().Logger().Log("Resending pending packets");
 				std::vector<SlidingWindow::FrameWrapper> pendingFrames;
 				mWindow.GetPendingFrames(pendingFrames);
 				sendFrames(pendingFrames, mClientAddress, mClientPort);
@@ -311,6 +313,7 @@ void kgp::IoEngine::run()
 			// If ACKs timed out
 			else if (mState.wait)
 			{
+				DependancyManager::Instance().Logger().Log("Resending ACK");
 				// Resend all ACKs
 				ackPacket(mState.seqNum, mClientAddress, mClientPort);
 				restartRcvTimer();

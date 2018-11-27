@@ -150,11 +150,11 @@ void kgp::SlidingWindow::GetPendingFrames(std::vector<FrameWrapper>& list)
 		frameWrapper.seqNum = tmpPointer;
 		frameWrapper.data = mBuffer.data() + tmpPointer;
 
-		// If remaining unread window data is less than default size
-		if (mPointer - tmpPointer < Size::DATA)
+		// If reading default size of data would exceed window size
+		if (tmpPointer + Size::DATA > mHead + mWindowSize)
 		{
 			// Size is distance between the two pointers
-			frameWrapper.size = mPointer - tmpPointer;
+			frameWrapper.size = mHead + mWindowSize - tmpPointer;
 		}
 		else
 		{
