@@ -129,6 +129,7 @@ void kgp::IoEngine::sendWindow(const QHostAddress& client, const short& port)
 	{
 		DependancyManager::Instance().Logger().Log("Transmission finished, sending EOT");
 		sendEot(client, port);
+		Reset();
 	}
 	else
 	{
