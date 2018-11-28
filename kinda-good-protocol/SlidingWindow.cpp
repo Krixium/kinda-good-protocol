@@ -1,4 +1,4 @@
-#include "DependancyManager.h"
+#include "DependencyManager.h"
 #include "SlidingWindow.h"
 
 kgp::SlidingWindow::SlidingWindow(const quint64& size)
@@ -40,14 +40,14 @@ bool kgp::SlidingWindow::BufferFile(QFile& file)
 		// Return false if the file could not be opened
 		if (!file.open(QIODevice::ReadOnly))
 		{
-			DependancyManager::Instance().Logger().Error("Could not buffer the file: " + file.fileName().toStdString());
+			DependencyManager::Instance().Logger().Error("Could not buffer the file: " + file.fileName().toStdString());
 			return false;
 		}
 	}
 
 	// Read the entire file into the buffer
 	mBuffer.append(file.readAll());
-	DependancyManager::Instance().Logger().Log(QString::number(mBuffer.size()).toStdString() + " bytes were buffered");
+	DependencyManager::Instance().Logger().Log(QString::number(mBuffer.size()).toStdString() + " bytes were buffered");
 
 	// Close the file
 	file.close();
@@ -209,12 +209,12 @@ bool kgp::SlidingWindow::AckFrame(const quint64& ackNum)
 		{
 			mHead = ackNum;
 		}
-		DependancyManager::Instance().Logger().Log("Advancing window head to " + QString::number(ackNum).toStdString());
+		DependencyManager::Instance().Logger().Log("Advancing window head to " + QString::number(ackNum).toStdString());
 		return true;
 	}
 	else
 	{
-		DependancyManager::Instance().Logger().Log("Invalid sequence number " + QString::number(ackNum).toStdString() + " received");
+		DependencyManager::Instance().Logger().Log("Invalid sequence number " + QString::number(ackNum).toStdString() + " received");
 		return false;
 	}
 }

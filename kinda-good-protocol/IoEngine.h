@@ -9,7 +9,7 @@
 #include <QThread>
 #include <QTime>
 
-#include "DependancyManager.h"
+#include "DependencyManager.h"
 #include "res.h"
 #include "SlidingWindow.h"
 

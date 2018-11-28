@@ -5,13 +5,13 @@
     <ClCompile Include="KindaGoodProtocol.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="DependancyManager.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="IoEngine.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="SlidingWindow.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DependencyManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -62,13 +62,13 @@
     <ClInclude Include="res.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="DependancyManager.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="SlidingWindow.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Logger.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DependencyManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
