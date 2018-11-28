@@ -1,3 +1,27 @@
+#-------------------------------------------------------------------------------------
+#-	SOURCE FILE:		    network-emu.py
+#-
+#-	PROGRAM:		        Network Emulator
+#-
+#-	FUNCTIONS:		
+#-                          control(socket)
+#-                          incoming(socket, queue, delay):
+#-                          outgoing(socket, queue, clients):
+#-
+#-
+#-	DATE:			        November 27, 2018
+#-
+#-	REVISIONS:		        N/A
+#-
+#-	DESIGNERS:		        Benny Wang
+#-
+#-	PROGRAMMERS:		    Benny Wang
+#-
+#-	NOTES:
+#-                          Fowards packets between two hosts. A loss rate and average
+#-                          delay can be specificed in command line arguements in the form:
+#-                              python3 network-emu.py [loss rate] [average delay]
+#--------------------------------------------------------------------------------------
 import collections
 import threading
 import random
@@ -17,6 +41,24 @@ delay = 0
 packet_queue = collections.deque()
 
 
+#--------------------------------------------------------------------------------------------------
+#- FUNCTION:                control
+#-
+#- DATE:                    November 27, 2018
+#-
+#- REVISIONS:               N/A
+#-
+#- DESIGNER:                Benny Wang
+#-
+#- PROGRAMMER:              Benny Wang
+#-
+#- INTERFACE:               void control(socket)
+#-                              socket: A bound udp socket.
+#-
+#- NOTES:
+#-                          Listens for input fron stdin. If "q" or "quit" is entered by the user
+#-                          this thread stops execution of the program.
+#-------------------------------------------------------------------------------------------------
 def control(socket):
     global running
     global lock
@@ -34,6 +76,26 @@ def control(socket):
     print("Control thread stopping")
 
 
+#--------------------------------------------------------------------------------------------------
+#- FUNCTION:                incoming
+#-
+#- DATE:                    November 27, 2018
+#-
+#- REVISIONS:               N/A
+#-
+#- DESIGNER:                Benny Wang
+#-
+#- PROGRAMMER:              Benny Wang
+#-
+#- INTERFACE:               void incoming(socket, queue, delay)
+#-                              socket: A bound udp socket.
+#-                              queue: A queue to hold incoming packets.
+#-                              delay: The average delay to add to packets.
+#-
+#- NOTES:
+#-                          Stores all incoming packets into a queue. The packet is stored with
+#-                          its sender and the timestamp of when it should be forwarded.
+#-------------------------------------------------------------------------------------------------
 def incoming(socket, queue, delay):
     global running
     global lock
@@ -53,6 +115,25 @@ def incoming(socket, queue, delay):
     print("Incoming thread stopping")
 
 
+#--------------------------------------------------------------------------------------------------
+#- FUNCTION:                outgoing
+#-
+#- DATE:                    November 27, 2018
+#-
+#- REVISIONS:               N/A
+#-
+#- DESIGNER:                Benny Wang
+#-
+#- PROGRAMMER:              Benny Wang
+#-
+#- INTERFACE:               void outgoing(socket, queue, clients)
+#-                              socket: A bound udp socket.
+#-                              queue: The queue of packets to send.
+#-                              clients: A list of valid clients.
+#-
+#- NOTES:
+#-                          Constantly checks the queue to see if there are packets to forward.
+#-------------------------------------------------------------------------------------------------
 def outgoing(socket, queue, clients):
     global running
     global lock
@@ -87,7 +168,7 @@ def outgoing(socket, queue, clients):
     print("Outgoing thread stopping")
 
 
-
+# ============================== start of program ==============================
 # getting user input from args
 argc = len(sys.argv)
 
@@ -116,3 +197,4 @@ outgoingThread.start()
 controlThread.join()
 incomingThread.join()
 outgoingThread.join()
+# ============================== end of program ==============================
