@@ -1,49 +1,94 @@
-from collections import deque
-from threading import Thread
+import collections
+import threading
 import random
 import socket
 import sys
 import time
 
-def incoming(s, q, d):
-    # infinie run loop
-    while True:
-        # read a packet
-        payload, incoming_client = s.recvfrom(1504)
-        print "Incoming packet from", incoming_client
-        # if the packet is not being droppped, queue it
-        if float(random.random()) > float(loss_rate):
-            q.append((payload, incoming_client, time.time() + int(d)))
-
-
-def outgoing(s, q, clients):
-    # infinite run loop
-    while True:
-        while len(q) > 0:
-            x = q.popleft()
-            payload = x[0]
-            client = x[1]
-            out_time = x[2]
-            if time.time() > out_time:
-                if client == clients[0]:
-                    s.sendto(payload, clients[1])
-                elif client == clients[1]:
-                    s.sendto(payload, clients[0])
-                else:
-                    print "Error"
-            else:
-                q.appendleft(x)
-                break
-
 
 # variables
-server = ("0.0.0.0", 8000)
-clients = [("192.168.0.18", 8000), ("192.168.0.233", 8000)]
+lock = threading.Lock()
+running = True
+port = 8000
+server = ("0.0.0.0", port)
+clients = [("192.168.0.18", port), ("192.168.0.233", port)]
 loss_rate = 0
 delay = 0
-packet_queue = deque()
+packet_queue = collections.deque()
 
-# getting user input
+
+def control(socket):
+    global running
+    global lock
+
+    while running:
+        buffer = input()
+        buffer.lower()
+
+        if buffer == "q" or buffer == "quit":
+            print("Quitting ...")
+            with lock:
+                running = False
+                socket.close()
+
+    print("Control thread stopping")
+
+
+def incoming(socket, queue, delay):
+    global running
+    global lock
+
+    # infinie run loop
+    while running:
+        # read a packet and sender
+        payload, incoming_client = socket.recvfrom(1504)
+        print("Incoming packet from", incoming_client)
+
+        # check if this packet should be dropped
+        if float(random.random()) > float(loss_rate):
+            # queue it
+            with lock:
+                queue.append((payload, incoming_client, time.time() + int(delay)))
+
+    print("Incoming thread stopping")
+
+
+def outgoing(socket, queue, clients):
+    global running
+    global lock
+
+    while running:
+        # send all the packets that have waited long enough
+        while len(queue) > 0:
+            # get the first tuple in queue
+            with lock:
+                packet_tuple = queue.popleft()
+
+            # alias to make code more readable
+            payload = packet_tuple[0]
+            client = packet_tuple[1]
+            out_time = packet_tuple[2]
+
+            # if it has waited long enough
+            if time.time() > out_time:
+                # send it
+                if client == clients[0]:
+                    socket.sendto(payload, clients[1])
+                elif client == clients[1]:
+                    socket.sendto(payload, clients[0])
+                else:
+                    print("Error")
+            else:
+                # put it back in the queue and continue
+                with lock:
+                    queue.appendleft(x)
+                break
+
+    print("Outgoing thread stopping")
+
+
+
+# getting user input from args
 argc = len(sys.argv)
 
 if argc >= 2:
@@ -54,17 +99,20 @@ if argc >= 3:
 
 
 # start
-print "Loss rate:", loss_rate
+print("Loss rate:", loss_rate)
 
 # create the socket
 s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 s.bind(server)
 
-incomingThread = Thread(target=incoming, args=(s, packet_queue, delay,))
-outgoingThread = Thread(target=outgoing, args=(s, packet_queue, clients,))
+controlThread = threading.Thread(target=control, args=(s,))
+incomingThread = threading.Thread(target=incoming, args=(s, packet_queue, delay,))
+outgoingThread = threading.Thread(target=outgoing, args=(s, packet_queue, clients,))
 
+controlThread.start()
 incomingThread.start()
 outgoingThread.start()
 
+controlThread.join()
 incomingThread.join()
 outgoingThread.join()
