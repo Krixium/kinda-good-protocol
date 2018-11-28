@@ -35,7 +35,7 @@ lock = threading.Lock()
 running = True
 port = 8000
 server = ("0.0.0.0", port)
-clients = [("192.168.0.18", port), ("192.168.0.233", port)]
+clients = [("192.168.0.12", port), ("192.168.0.233", port)]
 loss_rate = 0
 delay = 0
 packet_queue = collections.deque()
@@ -111,6 +111,8 @@ def incoming(socket, queue, delay):
             # queue it
             with lock:
                 queue.append((payload, incoming_client, time.time() + float(delay)))
+        else:
+            print("Packet dropped")
 
     print("Incoming thread stopping")
 
@@ -180,6 +182,7 @@ if argc >= 3:
 
 # start
 print("Loss rate:", loss_rate)
+print("Average delay:", delay)
 
 # create the socket
 s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
