@@ -3,7 +3,7 @@
 #-
 #-	PROGRAM:		        Network Emulator
 #-
-#-	FUNCTIONS:		
+#-	FUNCTIONS:
 #-                          control(socket)
 #-                          incoming(socket, queue, delay):
 #-                          outgoing(socket, queue, clients):
@@ -110,7 +110,7 @@ def incoming(socket, queue, delay):
         if float(random.random()) > float(loss_rate):
             # queue it
             with lock:
-                queue.append((payload, incoming_client, time.time() + int(delay)))
+                queue.append((payload, incoming_client, time.time() + float(delay)))
 
     print("Incoming thread stopping")
 
@@ -162,8 +162,7 @@ def outgoing(socket, queue, clients):
             else:
                 # put it back in the queue and continue
                 with lock:
-                    queue.appendleft(x)
-                break
+                    queue.appendleft(packet_tuple)
 
     print("Outgoing thread stopping")
 
