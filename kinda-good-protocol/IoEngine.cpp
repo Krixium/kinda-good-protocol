@@ -20,30 +20,30 @@ kgp::IoEngine::IoEngine(const bool running, QObject *parent)
 	mSocket.bind(QHostAddress::Any, PORT);
 	connect(&mSocket, &QUdpSocket::readyRead, this, &IoEngine::newDataHandler);
 
-	kgp::DependancyManager::Instance().Logger().Log("Io Engine initialized");
+	kgp::DependencyManager::Instance().Logger().Log("Io Engine initialized");
 }
 
 kgp::IoEngine::~IoEngine()
 {
-	DependancyManager::Instance().Logger().Log("Io Engine stopped");
+	DependencyManager::Instance().Logger().Log("Io Engine stopped");
 	mSocket.close();
 }
 
 void kgp::IoEngine::Start()
 {
-	DependancyManager::Instance().Logger().Log("Io Engine starting");
+	DependencyManager::Instance().Logger().Log("Io Engine starting");
 	start();
 }
 
 void kgp::IoEngine::Stop()
 {
-	DependancyManager::Instance().Logger().Log("Io Engine stopping");
+	DependencyManager::Instance().Logger().Log("Io Engine stopping");
 	exit();
 }
 
 void kgp::IoEngine::Reset()
 {
-	DependancyManager::Instance().Logger().Log("Io Engine resetting");
+	DependencyManager::Instance().Logger().Log("Io Engine resetting");
 	QMutexLocker locker(&mMutex);
 	// Reset state to idle state
 	memset(&mState, 0, sizeof(mState));
@@ -68,7 +68,7 @@ bool kgp::IoEngine::StartFileSend(const std::string& filename, const std::string
 	// If not already sending
 	if (!mState.dataSent)
 	{
-		DependancyManager::Instance().Logger().Log("Sending file " + filename + " to " + address);
+		DependencyManager::Instance().Logger().Log("Sending file " + filename + " to " + address);
 		// Buffer file
 		QFile file(filename.c_str());
 		// Return false if the file could not be read
@@ -92,7 +92,7 @@ bool kgp::IoEngine::StartFileSend(const std::string& filename, const std::string
 	}
 	else
 	{
-		DependancyManager::Instance().Logger().Error("Already sending");
+		DependencyManager::Instance().Logger().Error("Already sending");
 		return false;
 	}
 }
@@ -100,8 +100,8 @@ bool kgp::IoEngine::StartFileSend(const std::string& filename, const std::string
 void kgp::IoEngine::send(const Packet& packet, const QHostAddress& address, const short& port)
 {
 	mSocket.writeDatagram((char *)&packet, sizeof(packet), address, port);
-	DependancyManager::Instance().Logger().Log("Sending packet ...");
-	DependancyManager::Instance().Logger().LogDataPacket(packet, address);
+	DependencyManager::Instance().Logger().Log("Sending packet ...");
+	DependencyManager::Instance().Logger().LogPacket(packet, address);
 }
 
 void kgp::IoEngine::sendFrames(std::vector<SlidingWindow::FrameWrapper> list, const QHostAddress& client, const short& port)
@@ -127,13 +127,13 @@ void kgp::IoEngine::sendWindow(const QHostAddress& client, const short& port)
 {
 	if (mWindow.IsEOT())
 	{
-		DependancyManager::Instance().Logger().Log("Transmission finished, sending EOT");
+		DependencyManager::Instance().Logger().Log("Transmission finished, sending EOT");
 		sendEot(client, port);
 		Reset();
 	}
 	else
 	{
-		DependancyManager::Instance().Logger().Log("Transmission unfinished, sending data");
+		DependencyManager::Instance().Logger().Log("Transmission unfinished, sending data");
 		std::vector<SlidingWindow::FrameWrapper> frames;
 		mWindow.GetNextFrames(frames);
 		sendFrames(frames, client, port);
@@ -155,7 +155,7 @@ void kgp::IoEngine::newDataHandler()
 		// If less than a header was read print error and continue
 		if (datagram.data().size() < sizeof(struct PacketHeader))
 		{
-			DependancyManager::Instance().Logger().Error("Not enough data was read from " + datagram.senderAddress().toString().toStdString());
+			DependencyManager::Instance().Logger().Error("Not enough data was read from " + datagram.senderAddress().toString().toStdString());
 			continue;
 		}
 
@@ -165,8 +165,8 @@ void kgp::IoEngine::newDataHandler()
 		restartIdleTimer();
 
 		// Log receive packet here
-		DependancyManager::Instance().Logger().Log("Receiving packet ...");
-		DependancyManager::Instance().Logger().LogDataPacket(buffer, datagram.senderAddress());
+		DependencyManager::Instance().Logger().Log("Receiving packet ...");
+		DependencyManager::Instance().Logger().LogPacket(buffer, datagram.senderAddress());
 
 		// Handle packet accordingly
 		switch (buffer.Header.PacketType)
@@ -186,7 +186,7 @@ void kgp::IoEngine::newDataHandler()
 			}
 			else
 			{
-				DependancyManager::Instance().Logger().Error("SYN received while in invalid state from " + datagram.senderAddress().toString().toStdString());
+				DependencyManager::Instance().Logger().Error("SYN received while in invalid state from " + datagram.senderAddress().toString().toStdString());
 			}
 			break;
 		case PacketType::ACK:
@@ -205,7 +205,7 @@ void kgp::IoEngine::newDataHandler()
 					}
 					else
 					{
-						DependancyManager::Instance().Logger().Error("ACK received for SYN while in invalid state from " + datagram.senderAddress().toString().toStdString());
+						DependencyManager::Instance().Logger().Error("ACK received for SYN while in invalid state from " + datagram.senderAddress().toString().toStdString());
 					}
 				}
 				// If the ACK is for data
@@ -220,7 +220,7 @@ void kgp::IoEngine::newDataHandler()
 						}
 						else
 						{
-							DependancyManager::Instance().Logger().Error("Unexpected ACK received(" + QString::number(buffer.Header.AckNumber).toStdString() + ")");
+							DependencyManager::Instance().Logger().Error("Unexpected ACK received(" + QString::number(buffer.Header.AckNumber).toStdString() + ")");
 						}
 
 					}
@@ -228,7 +228,7 @@ void kgp::IoEngine::newDataHandler()
 			}
 			else
 			{
-				DependancyManager::Instance().Logger().LogInvalidSender(mClientAddress, mClientPort, datagram.senderAddress(), datagram.senderPort());
+				DependencyManager::Instance().Logger().LogInvalidSender(mClientAddress, mClientPort, datagram.senderAddress(), datagram.senderPort());
 			}
 			break;
 		case PacketType::DATA:
@@ -237,7 +237,7 @@ void kgp::IoEngine::newDataHandler()
 				// Check if it is the incoming packet is a previous packet or next packet
 				if (buffer.Header.SequenceNumber <= mState.seqNum)
 				{
-					DependancyManager::Instance().Logger().Log("Valid packet received");
+					DependencyManager::Instance().Logger().Log("Valid packet received");
 
 					// Always ACK a valid packet
 					ackPacket(buffer.Header.SequenceNumber, datagram.senderAddress(), datagram.senderPort());
@@ -253,24 +253,24 @@ void kgp::IoEngine::newDataHandler()
 				}
 				else
 				{
-					DependancyManager::Instance().Logger().Error("Invalid packet received, expecting sequence number " + QString::number(mState.seqNum).toStdString());
+					DependencyManager::Instance().Logger().Error("Invalid packet received, expecting sequence number " + QString::number(mState.seqNum).toStdString());
 				}
 			}
 			else
 			{
-				DependancyManager::Instance().Logger().Error("Data received while in invalid state from " + datagram.senderAddress().toString().toStdString());
+				DependencyManager::Instance().Logger().Error("Data received while in invalid state from " + datagram.senderAddress().toString().toStdString());
 			}
 			break;
 		case PacketType::EOT:
 			if (mState.wait)
 			{
 				// Valid EOT was received so reset
-				DependancyManager::Instance().Logger().Log("EOT received, resetting state");
+				DependencyManager::Instance().Logger().Log("EOT received, resetting state");
 				Reset();
 			}
 			else
 			{
-				DependancyManager::Instance().Logger().Error("EOT received while in invalid state from " + datagram.senderAddress().toString().toStdString());
+				DependencyManager::Instance().Logger().Error("EOT received while in invalid state from " + datagram.senderAddress().toString().toStdString());
 			}
 			break;
 		}
@@ -287,14 +287,14 @@ void kgp::IoEngine::run()
 		// If idle timeout has been reached
 		if (mState.timeoutIdle)
 		{
-			DependancyManager::Instance().Logger().Log("Idle timeout reached");
+			DependencyManager::Instance().Logger().Log("Idle timeout reached");
 			Reset();
 		}
 
 		// If receive timeout has been reached
 		if (mState.timeoutRcv)
 		{
-			DependancyManager::Instance().Logger().Log("Receive timeout reached");
+			DependencyManager::Instance().Logger().Log("Receive timeout reached");
 
 			// If syn timed out
 			if (mState.waitSyn)
@@ -306,7 +306,7 @@ void kgp::IoEngine::run()
 			else if (mState.dataSent)
 			{
 				// Resend pending frames
-				DependancyManager::Instance().Logger().Log("Resending pending packets");
+				DependencyManager::Instance().Logger().Log("Resending pending packets");
 				std::vector<SlidingWindow::FrameWrapper> pendingFrames;
 				mWindow.GetPendingFrames(pendingFrames);
 				sendFrames(pendingFrames, mClientAddress, mClientPort);
@@ -316,7 +316,7 @@ void kgp::IoEngine::run()
 			// If ACKs timed out
 			else if (mState.wait)
 			{
-				DependancyManager::Instance().Logger().Log("Resending ACK");
+				DependencyManager::Instance().Logger().Log("Resending ACK");
 				// Resend all ACKs
 				ackPacket(mState.seqNum, mClientAddress, mClientPort);
 				restartRcvTimer();
@@ -325,7 +325,7 @@ void kgp::IoEngine::run()
 			else
 			{
 				// This should never happen
-				DependancyManager::Instance().Logger().Error("Receive timeout reached while in invalid state.");
+				DependencyManager::Instance().Logger().Error("Receive timeout reached while in invalid state.");
 			}
 		}
 	}

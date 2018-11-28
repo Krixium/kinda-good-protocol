@@ -1,5 +1,5 @@
 #include "KindaGoodProtocol.h"
-#include "DependancyManager.h"
+#include "DependencyManager.h"
 
 #include <QPushButton>
 #include <QFileDialog>
@@ -15,7 +15,7 @@ KindaGoodProtocol::KindaGoodProtocol(QWidget *parent)
 	mFile->open(QIODevice::WriteOnly);
 	Q_ASSERT(mFile->isOpen() && mFile->isWritable());
 
-	kgp::DependancyManager::Instance().Logger().Log("Main window initialized");
+	kgp::DependencyManager::Instance().Logger().Log("Main window initialized");
 
 	connect(&mIo, &kgp::IoEngine::dataRead, this, &KindaGoodProtocol::writeBytesToFile);
 	connect(ui.buttonSend, &QPushButton::pressed, this, &KindaGoodProtocol::startSend);
@@ -24,7 +24,7 @@ KindaGoodProtocol::KindaGoodProtocol(QWidget *parent)
 
 KindaGoodProtocol::~KindaGoodProtocol()
 {
-	kgp::DependancyManager::Instance().Logger().Log("Program exiting");
+	kgp::DependencyManager::Instance().Logger().Log("Program exiting");
 	mIo.Stop();
 
 	mFile->close();
