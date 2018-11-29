@@ -1,10 +1,45 @@
+/*---------------------------------------------------------------------------------------
+-- SOURCE FILE:             IoEngine.cpp
+--
+-- PROGRAM:                 KindaGoodProtocol
+--
+-- FUNCTIONS:               N/A
+--
+-- DATE:                    November 27, 2018
+--
+-- REVISIONS:               N/A
+--
+-- DESIGNERS:               Benny Wang
+--
+-- PROGRAMMERS:             Benny Wang
+--
+-- NOTES:
+--                          The engine of the application that handles all protocol logic.
+---------------------------------------------------------------------------------------*/
 #include "IoEngine.h"
 
 #include <vector>
 
 #include <QNetworkDatagram>
 
-kgp::IoEngine::IoEngine(const bool running, QObject *parent)
+/*--------------------------------------------------------------------------------------------------
+-- FUNCTION:                kgp::IoEngine::IoEngine
+--
+-- DATE:                    November 27, 2018
+--
+-- REVISIONS:               N/A
+--
+-- DESIGNER:                Benny Wang
+--
+-- PROGRAMMER:              Benny Wang
+--
+-- INTERFACE:               kgp::IoEngine::IoEngine(const bool running, QObject *parent)
+--                              parent: The parent QObject.
+--
+-- NOTES:
+--                          Constructor for the IoEngine. Creates a sliding window and binds a port.
+--------------------------------------------------------------------------------------------------*/
+kgp::IoEngine::IoEngine(QObject *parent)
     : QThread(parent)
     , mSocket(this)
     , mState()
@@ -23,24 +58,90 @@ kgp::IoEngine::IoEngine(const bool running, QObject *parent)
     kgp::DependencyManager::Instance().Logger().Log("Io Engine initialized");
 }
 
+/*--------------------------------------------------------------------------------------------------
+-- FUNCTION:                kgp::IoEngine::~IoEngine
+--
+-- DATE:                    November 27, 2018
+--
+-- REVISIONS:               N/A
+--
+-- DESIGNER:                Benny Wang
+--
+-- PROGRAMMER:              Benny Wang
+--
+-- INTERFACE:               kgp::IoEngine::~IoEngine()
+--
+-- NOTES:
+--                          Deconstructor for the IoEngine. Closes the bound socket.
+--------------------------------------------------------------------------------------------------*/
 kgp::IoEngine::~IoEngine()
 {
     DependencyManager::Instance().Logger().Log("Io Engine stopped");
     mSocket.close();
 }
 
+/*--------------------------------------------------------------------------------------------------
+-- FUNCTION:                kgp::IoEngine::Start
+--
+-- DATE:                    November 27, 2018
+--
+-- REVISIONS:               N/A
+--
+-- DESIGNER:                Benny Wang
+--
+-- PROGRAMMER:              Benny Wang
+--
+-- INTERFACE:               void kgp::IoEngine::Start()
+--
+-- NOTES:
+--                          Wrapper function of QThread::start. Starts the thread and executes the
+--                          overloaded QThread::run function.
+--------------------------------------------------------------------------------------------------*/
 void kgp::IoEngine::Start()
 {
     DependencyManager::Instance().Logger().Log("Io Engine starting");
     start();
 }
 
+/*--------------------------------------------------------------------------------------------------
+-- FUNCTION:                kgp::IoEngine::Stop
+--
+-- DATE:                    November 27, 2018
+--
+-- REVISIONS:               N/A
+--
+-- DESIGNER:                Benny Wang
+--
+-- PROGRAMMER:              Benny Wang
+--
+-- INTERFACE:               void kgp::IoEngine::Stop()
+--
+-- NOTES:
+--                          Stops the thread of the IoEngine.
+--------------------------------------------------------------------------------------------------*/
 void kgp::IoEngine::Stop()
 {
     DependencyManager::Instance().Logger().Log("Io Engine stopping");
     exit();
 }
 
+/*--------------------------------------------------------------------------------------------------
+-- FUNCTION:                kgp::IoEngine::Reset
+--
+-- DATE:                    November 27, 2018
+--
+-- REVISIONS:               N/A
+--
+-- DESIGNER:                Benny Wang
+--
+-- PROGRAMMER:              Benny Wang
+--
+-- INTERFACE:               void kgp::IoEngine::Reset()
+--
+-- NOTES:
+--                          Resets the state of the IoEngine to the default state where the socket
+--                          is still bond and there is not connection established yet.
+--------------------------------------------------------------------------------------------------*/
 void kgp::IoEngine::Reset()
 {
     DependencyManager::Instance().Logger().Log("Io Engine resetting");
@@ -61,6 +162,30 @@ void kgp::IoEngine::Reset()
     Stop();
 }
 
+/*--------------------------------------------------------------------------------------------------
+-- FUNCTION:                kgp::IoEngine::StartFileSend
+--
+-- DATE:                    November 27, 2018
+--
+-- REVISIONS:               N/A
+--
+-- DESIGNER:                Benny Wang
+--
+-- PROGRAMMER:              Benny Wang
+--
+-- INTERFACE:               bool kgp::IoEngine::StartFileSend(const std::string& filename, const std::string& address, const short& port)
+--                              filename: The name of the file to send.
+--                              address: The address to send to.
+--                              port: The port to send the file on.
+--
+-- RETURN:                  True if sending has started, false otherwise.
+--
+-- NOTES:
+--                          Initiates sending. Attempts to open the given file and buffers it in
+--                          the sliding window. Then sends a syn packet and transitions to the waitSyn
+--                          state. If buffering the file fails or if the engine is already sending
+--                          nothing will happen and false is returned.
+--------------------------------------------------------------------------------------------------*/
 bool kgp::IoEngine::StartFileSend(const std::string& filename, const std::string& address, const short& port)
 {
     QMutexLocker locker(&mMutex);
@@ -97,6 +222,25 @@ bool kgp::IoEngine::StartFileSend(const std::string& filename, const std::string
     }
 }
 
+/*--------------------------------------------------------------------------------------------------
+-- FUNCTION:                kgp::IoEngine::send
+--
+-- DATE:                    November 27, 2018
+--
+-- REVISIONS:               N/A
+--
+-- DESIGNER:                Benny Wang
+--
+-- PROGRAMMER:              Benny Wang
+--
+-- INTERFACE:               void kgp::IoEngine::send(const Packet& packet, const QHostAddress& address, const short& port)
+--                              packet: The packet to send.
+--                              address: The address to send the packet to.
+--                              port: The port to send the packet on.
+--
+-- NOTES:
+--                          Sends packet to address on port port using UDP and logs the sent packet.
+--------------------------------------------------------------------------------------------------*/
 void kgp::IoEngine::send(const Packet& packet, const QHostAddress& address, const short& port)
 {
     mSocket.writeDatagram((char *)&packet, sizeof(packet), address, port);
@@ -104,7 +248,26 @@ void kgp::IoEngine::send(const Packet& packet, const QHostAddress& address, cons
     DependencyManager::Instance().Logger().LogPacket(packet, address);
 }
 
-void kgp::IoEngine::sendFrames(std::vector<SlidingWindow::FrameWrapper> list, const QHostAddress& client, const short& port)
+/*--------------------------------------------------------------------------------------------------
+-- FUNCTION:                kgp::IoEngine::sendFrames
+--
+-- DATE:                    November 27, 2018
+--
+-- REVISIONS:               N/A
+--
+-- DESIGNER:                Benny Wang
+--
+-- PROGRAMMER:              Benny Wang
+--
+-- INTERFACE:               void kgp::IoEngine::sendFrames(std::vector<SlidingWindow::Frame> list, const QHostAddress& client, const short& port)
+--                              list: The list of frames to send.
+--                              client: The host to send to.
+--                              port: The port to send on.
+--
+-- NOTES:
+--                          Sends the list of frames to client on port port.
+--------------------------------------------------------------------------------------------------*/
+void kgp::IoEngine::sendFrames(std::vector<SlidingWindow::Frame> list, const QHostAddress& client, const short& port)
 {
     for (auto frame : list)
     {
@@ -123,9 +286,29 @@ void kgp::IoEngine::sendFrames(std::vector<SlidingWindow::FrameWrapper> list, co
     }
 }
 
+/*--------------------------------------------------------------------------------------------------
+-- FUNCTION:                kgp::IoEngine::sendWindow
+--
+-- DATE:                    November 27, 2018
+--
+-- REVISIONS:               N/A
+--
+-- DESIGNER:                Benny Wang
+--
+-- PROGRAMMER:              Benny Wang
+--
+-- INTERFACE:               void kgp::IoEngine::sendWindow(const QHostAddress& client, const short& port)
+--                              client: The client to send to.
+--                              port: The port to send on.
+--
+-- NOTES:
+--                          Sends the window to the client on port port. Will grab a list of frames
+--                          from the sliding window and then sends it to the client. If the window
+--                          has no more frames to send then an EOT packet is sent instead.
+--------------------------------------------------------------------------------------------------*/
 void kgp::IoEngine::sendWindow(const QHostAddress& client, const short& port)
 {
-    if (mWindow.IsEOT())
+    if (mWindow.IsEot())
     {
         DependencyManager::Instance().Logger().Log("Transmission finished, sending EOT");
         sendEot(client, port);
@@ -134,7 +317,7 @@ void kgp::IoEngine::sendWindow(const QHostAddress& client, const short& port)
     else
     {
         DependencyManager::Instance().Logger().Log("Transmission unfinished, sending data");
-        std::vector<SlidingWindow::FrameWrapper> frames;
+        std::vector<SlidingWindow::Frame> frames;
         mWindow.GetNextFrames(frames);
         sendFrames(frames, client, port);
         restartRcvTimer();
@@ -142,6 +325,24 @@ void kgp::IoEngine::sendWindow(const QHostAddress& client, const short& port)
     }
 }
 
+/*--------------------------------------------------------------------------------------------------
+-- FUNCTION:                kgp::IoEngine::newDataHandler
+--
+-- DATE:                    November 27, 2018
+--
+-- REVISIONS:               N/A
+--
+-- DESIGNER:                Benny Wang
+--
+-- PROGRAMMER:              Benny Wang
+--
+-- INTERFACE:               void kgp::IoEngine::newDataHandler()
+--
+-- NOTES:
+--                          Callback function for when new data appears on the socket to be read.
+--                          Will read packets from the socket until all packets are handled. After
+--                          validating the packet size, the packet is handled according to protocol.
+--------------------------------------------------------------------------------------------------*/
 void kgp::IoEngine::newDataHandler()
 {
     while (mSocket.hasPendingDatagrams())
@@ -277,6 +478,26 @@ void kgp::IoEngine::newDataHandler()
     }
 }
 
+/*--------------------------------------------------------------------------------------------------
+-- FUNCTION:                kgp::IoEngine::run
+--
+-- DATE:                    November 27, 2018
+--
+-- REVISIONS:               N/A
+--
+-- DESIGNER:                Benny Wang
+--
+-- PROGRAMMER:              Benny Wang
+--
+-- INTERFACE:               void kgp::IoEngine::run()
+--
+-- NOTES:
+--                          Overloaded run function of QThread::run. This is the main function of the
+--                          thread. The thread is started and this function is run whenever there is
+--                          an active connection and is stopped when the connection is closed. This
+--                          function is responsible for checking the timeouts and handling them
+--                          accordingly.
+--------------------------------------------------------------------------------------------------*/
 void kgp::IoEngine::run()
 {
     // Only run when there is a connection and not idle
@@ -307,7 +528,7 @@ void kgp::IoEngine::run()
             {
                 // Resend pending frames
                 DependencyManager::Instance().Logger().Log("Resending pending packets");
-                std::vector<SlidingWindow::FrameWrapper> pendingFrames;
+                std::vector<SlidingWindow::Frame> pendingFrames;
                 mWindow.GetPendingFrames(pendingFrames);
                 sendFrames(pendingFrames, mClientAddress, mClientPort);
                 restartRcvTimer();
