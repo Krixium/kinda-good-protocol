@@ -1,21 +1,21 @@
 /*---------------------------------------------------------------------------------------
---	SOURCE FILE:			DependancyManager.h
+-- SOURCE FILE:             DependancyManager.h
 --
---	PROGRAM:				KindaGoodProtocol
+-- PROGRAM:                 KindaGoodProtocol
 --
---	FUNCTIONS:				N/A
+-- FUNCTIONS:               N/A
 --
---	DATE:					November 27, 2018
+-- DATE:                    November 27, 2018
 --
---	REVISIONS:				N/A
+-- REVISIONS:               N/A
 --
---	DESIGNERS:				Benny Wang
+-- DESIGNERS:               Benny Wang
 --
---	PROGRAMMERS:			Benny Wang
+-- PROGRAMMERS:             Benny Wang
 --
---	NOTES:
---							This is a singleton class that holds objects, variables
---							and other dependencies required throughout the application.
+-- NOTES:
+--                          This is a singleton class that holds objects, variables
+--                          and other dependencies required throughout the application.
 ---------------------------------------------------------------------------------------*/
 #include "DependencyManager.h"
 
