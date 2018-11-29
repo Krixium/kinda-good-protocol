@@ -9,45 +9,55 @@
 
 namespace kgp
 {
-	class SlidingWindow
-	{
-	public:
-		struct FrameWrapper
-		{
-			quint64 seqNum;
-			size_t size;
-			char *data;
-		};
+    class SlidingWindow
+    {
+    public:
+        struct FrameWrapper
+        {
+            quint64 seqNum;
+            size_t size;
+            char *data;
+        };
 
-	private:
-		quint64 mHead;
-		quint64 mSize;
-		quint64 mPointer;
+        struct LastPacketState
+        {
+            quint64 seqNum;
+            bool pending;
+            bool acked;
+        };
 
-		QByteArray mBuffer;
+    private:
+        quint64 mHead;
+        quint64 mWindowSize;
+        quint64 mPointer;
+        LastPacketState mLastPacketState;
 
-	public:
-		SlidingWindow(const quint64& size = Size::WINDOW);
-		~SlidingWindow() = default;
+        QByteArray mBuffer;
 
-		inline void SetWindowSize(const quint64 size) { mSize = size; }
-		inline quint64 GetWindowSize() { return mSize; }
+    public:
+        SlidingWindow(const quint64& size = Size::WINDOW);
+        ~SlidingWindow() = default;
 
-		inline void Reset()
-		{
-			mHead = mPointer = 0;
-			mBuffer.clear();
-		}
+        inline void SetWindowSize(const quint64 size) { mWindowSize = size; }
+        inline quint64 GetWindowSize() { return mWindowSize; }
 
-		inline bool IsEOT()
-		{
-			return mBuffer.size() == mHead;
-		}
+        inline void Reset()
+        {
+            mHead = mPointer = 0;
+            mBuffer.clear();
+            memset(&mLastPacketState, 0, sizeof(mLastPacketState));
+        }
+        
 
-		void BufferFile(QFile& file);
+        inline bool IsEOT()
+        {
+            return mLastPacketState.acked;
+        }
 
-		void GetNextFrames(std::vector<FrameWrapper>& list);
-		void GetPendingFrames(std::vector<FrameWrapper>& list);
-		bool AckFrame(const quint64& ackNum);
-	};
+        bool BufferFile(QFile& file);
+
+        void GetNextFrames(std::vector<FrameWrapper>& list);
+        void GetPendingFrames(std::vector<FrameWrapper>& list);
+        bool AckFrame(const quint64& ackNum);
+    };
 }

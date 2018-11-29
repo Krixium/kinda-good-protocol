@@ -8,16 +8,26 @@
 
 class KindaGoodProtocol : public QMainWindow
 {
-	Q_OBJECT
+    Q_OBJECT
 
 private:
-	kgp::IoEngine mIo;
+    kgp::IoEngine mIo;
+    
+    QFile *mOutputFile;
+
+    QString mFileName;
 
 public:
-	KindaGoodProtocol(QWidget *parent = Q_NULLPTR);
-	~KindaGoodProtocol();
+    KindaGoodProtocol(QWidget *parent = Q_NULLPTR);
+    ~KindaGoodProtocol();
 
 private:
-	Ui::KindaGoodProtocolClass ui;
+    Ui::KindaGoodProtocolClass ui;
 
+private slots:
+    void startSend();
+
+    void writeBytesToFile(const char *data, const size_t& size);
+
+    void selectFileToSend();
 };
