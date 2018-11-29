@@ -69,9 +69,8 @@ def control(socket):
 
         if buffer == "q" or buffer == "quit":
             print("Quitting ...")
-            with lock:
-                running = False
-                socket.close()
+            running = False
+            socket.close()
 
     print("Control thread stopping")
 
