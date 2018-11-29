@@ -76,31 +76,31 @@ bool kgp::SlidingWindow::BufferFile(QFile& file)
 --                          frame that has been read this way.
 --------------------------------------------------------------------------------------------------*/
 
-void kgp::SlidingWindow::GetNextFrames(std::vector<FrameWrapper>& list)
+void kgp::SlidingWindow::GetNextFrames(std::vector<Frame>& list)
 {
-    FrameWrapper frameWrapper;
+    Frame frame;
 
     // While the pointer is less than the window size and less than buffer size
     while (mPointer < mHead + mWindowSize && mPointer < mBuffer.size())
     {
-        memset(&frameWrapper, 0, sizeof(frameWrapper));
-        frameWrapper.seqNum = mPointer;
-        frameWrapper.data = mBuffer.data() + mPointer;
+        memset(&frame, 0, sizeof(frame));
+        frame.seqNum = mPointer;
+        frame.data = mBuffer.data() + mPointer;
 
         // If the window does not have enough space for a whole packet
         if (mPointer + Size::DATA > mHead + mWindowSize)
         {
             // Set the size to the remaining window size
-            frameWrapper.size = (mHead + mWindowSize) - mPointer;
+            frame.size = (mHead + mWindowSize) - mPointer;
 
             // Check for buffer overflow
-            if (mPointer + frameWrapper.size > mBuffer.size())
+            if (mPointer + frame.size > mBuffer.size())
             {
                 // Set the size
-                frameWrapper.size = mBuffer.size() - mPointer;
+                frame.size = mBuffer.size() - mPointer;
                 // Remember that last packet has been sent
                 mLastPacketState.pending = true;
-                mLastPacketState.seqNum = frameWrapper.seqNum;
+                mLastPacketState.seqNum = frame.seqNum;
             }
         }
         // Normal case where the window has enough space for a whole packet
@@ -110,20 +110,20 @@ void kgp::SlidingWindow::GetNextFrames(std::vector<FrameWrapper>& list)
             if (mPointer + Size::DATA > mBuffer.size())
             {
                 // Set the size
-                frameWrapper.size = mBuffer.size() - mPointer;
+                frame.size = mBuffer.size() - mPointer;
                 // Remember that last packet has been sent
                 mLastPacketState.pending = true;
-                mLastPacketState.seqNum = frameWrapper.seqNum;            
+                mLastPacketState.seqNum = frame.seqNum;            
             }
             else
             {
-                frameWrapper.size = Size::DATA;
+                frame.size = Size::DATA;
             }
         }
 
         // Increment pointer and save the frame to the list
-        mPointer += frameWrapper.size;
-        list.push_back(frameWrapper);
+        mPointer += frame.size;
+        list.push_back(frame);
     }
 }
 
@@ -145,30 +145,30 @@ void kgp::SlidingWindow::GetNextFrames(std::vector<FrameWrapper>& list)
 --                          Grabs all the pending frames, that is frames between the window head
 --                          and the window pointer, and appends them to the list that was passed.
 --------------------------------------------------------------------------------------------------*/
-void kgp::SlidingWindow::GetPendingFrames(std::vector<FrameWrapper>& list)
+void kgp::SlidingWindow::GetPendingFrames(std::vector<Frame>& list)
 {
     quint64 tmpPointer = mHead;
 
     while (tmpPointer <= mPointer)
     {
-        FrameWrapper frameWrapper;
-        frameWrapper.seqNum = tmpPointer;
-        frameWrapper.data = mBuffer.data() + tmpPointer;
+        Frame frame;
+        frame.seqNum = tmpPointer;
+        frame.data = mBuffer.data() + tmpPointer;
 
         // If reading default size of data would exceed window size
         if (tmpPointer + Size::DATA > mHead + mWindowSize)
         {
             // Size is distance between the two pointers
-            frameWrapper.size = mHead + mWindowSize - tmpPointer;
+            frame.size = mHead + mWindowSize - tmpPointer;
         }
         else
         {
-            frameWrapper.size = Size::DATA;
+            frame.size = Size::DATA;
         }
 
         // Increment pointer
-        tmpPointer += frameWrapper.size;
-        list.push_back(frameWrapper);
+        tmpPointer += frame.size;
+        list.push_back(frame);
 
         if (tmpPointer == mPointer) break;
     }

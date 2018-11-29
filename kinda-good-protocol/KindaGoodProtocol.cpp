@@ -7,7 +7,7 @@
 
 KindaGoodProtocol::KindaGoodProtocol(QWidget *parent)
     : QMainWindow(parent)
-    , mIo(true, this)
+    , mIo(this)
 {
     ui.setupUi(this);
 
