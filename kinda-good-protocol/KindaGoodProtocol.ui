@@ -69,7 +69,20 @@
       </property>
       <layout class="QHBoxLayout" name="horizontalLayout">
        <item>
-        <widget class="QTextBrowser" name="logBrowser"/>
+        <widget class="QTextBrowser" name="logBrowser">
+         <property name="readOnly">
+          <bool>true</bool>
+         </property>
+         <property name="acceptRichText">
+          <bool>false</bool>
+         </property>
+         <property name="placeholderText">
+          <string/>
+         </property>
+         <property name="openLinks">
+          <bool>false</bool>
+         </property>
+        </widget>
        </item>
       </layout>
      </widget>
@@ -82,7 +95,7 @@
      <x>0</x>
      <y>0</y>
      <width>618</width>
-     <height>18</height>
+     <height>21</height>
     </rect>
    </property>
   </widget>

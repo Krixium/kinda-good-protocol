@@ -21,6 +21,14 @@
 
 #include <memory>
 #include <string>
+#include <fstream>
+#include <ctime>
+
+#ifdef _WIN32
+#include <sys/utime.h>
+#else 
+#include <utime.h>
+#endif
 
 #include <QByteArray>
 #include <QDateTime>
@@ -198,6 +206,44 @@ namespace kgp
         }
 
     private:
+
+        /*--------------------------------------------------------------------------------------------------
+        -- FUNCTION:                kgp::Logger::updateTimestamp
+        --
+        -- DATE:                    November 27, 2018
+        --
+        -- REVISIONS:               N/A
+        --
+        -- DESIGNER:                William Murphy
+        --
+        -- PROGRAMMER:              William Murphy
+        --
+        -- INTERFACE:               bool kgp::Logger::updateTimestamp(const std::string& filename)
+        --                              filename: The name of the file whose timestamp will be updated.
+        --
+        -- NOTES:					This function is required for QFileSystemWatcher to be properly notified
+		--							of file updates, at least on Windows.
+		--							
+        --------------------------------------------------------------------------------------------------*/
+		inline bool updateTimestamp(const std::string& filename) 
+		{
+			struct stat fstat;
+			struct utimbuf new_time;
+
+			if (stat(kgp::LOG_FILE, &fstat) != 0)
+			{
+				return false;
+			}
+
+			new_time.actime = fstat.st_atime;
+			new_time.modtime = time(NULL);
+
+			if (utime(kgp::LOG_FILE, &new_time)) {
+				return false;
+			}
+			return true;
+		}
+
         /*--------------------------------------------------------------------------------------------------
         -- FUNCTION:                kgp::Logger::write
         --
@@ -222,6 +268,10 @@ namespace kgp
             qDebug() << data;
             mLogFile.write(data.toStdString().c_str());
             mLogFile.write("\n");
+			// Flushes the stream so that logs can be displayed by the log viewer widget
+			mLogFile.flush();
+			updateTimestamp(kgp::LOG_FILE);
+			// Update the file timestamp
         }
     };
 }

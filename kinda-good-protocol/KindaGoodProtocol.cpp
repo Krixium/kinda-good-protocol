@@ -4,6 +4,7 @@
 #include <QPushButton>
 #include <QFileDialog>
 #include <QMessageBox>
+#include <QFileSystemWatcher>
 
 KindaGoodProtocol::KindaGoodProtocol(QWidget *parent)
     : QMainWindow(parent)
@@ -11,12 +12,24 @@ KindaGoodProtocol::KindaGoodProtocol(QWidget *parent)
 {
     ui.setupUi(this);
 
+	mLogFileWatcher.addPath(kgp::LOG_FILE);
+
     mOutputFile = new QFile("output.txt");
     mOutputFile->open(QIODevice::WriteOnly);
     Q_ASSERT(mOutputFile->isOpen() && mOutputFile->isWritable());
 
     kgp::DependencyManager::Instance().Logger().Log("Main window initialized");
 
+	// For streaming log text into the log browser
+	mLogFile.setFileName(kgp::LOG_FILE);
+	mLogFile.open(QIODevice::ReadOnly);
+	mLogStream.setDevice(&mLogFile);
+
+	ui.logBrowser->append(mLogStream.readAll());
+
+	qDebug() << mLogFileWatcher.files();
+
+	connect(&mLogFileWatcher, &QFileSystemWatcher::fileChanged, this, &KindaGoodProtocol::onLogFileUpdate);
     connect(&mIo, &kgp::IoEngine::dataRead, this, &KindaGoodProtocol::writeBytesToFile);
     connect(ui.buttonSend, &QPushButton::pressed, this, &KindaGoodProtocol::startSend);
     connect(ui.selectFileButton, &QPushButton::pressed, this, &KindaGoodProtocol::selectFileToSend);
@@ -60,3 +73,10 @@ void KindaGoodProtocol::selectFileToSend()
 }
 
 
+void KindaGoodProtocol::onLogFileUpdate()
+{
+	qDebug() << "Log file changed";
+	ui.logBrowser->append(mLogStream.readAll());
+	// Add the file path again if it was removed
+
+}

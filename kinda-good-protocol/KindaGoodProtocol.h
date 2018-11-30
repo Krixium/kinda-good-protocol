@@ -1,6 +1,9 @@
 #pragma once
 
 #include <QtWidgets/QMainWindow>
+#include <QTextStream>
+#include <QFileSystemWatcher>
+
 #include "ui_KindaGoodProtocol.h"
 
 #include "Logger.h"
@@ -17,6 +20,10 @@ private:
 
     QString mFileName;
 
+	QFile mLogFile;
+	QTextStream mLogStream;
+	QFileSystemWatcher mLogFileWatcher;
+
 public:
     KindaGoodProtocol(QWidget *parent = Q_NULLPTR);
     ~KindaGoodProtocol();
@@ -30,4 +37,6 @@ private slots:
     void writeBytesToFile(const char *data, const size_t& size);
 
     void selectFileToSend();
+	
+	void onLogFileUpdate();
 };
