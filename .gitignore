@@ -1,5 +1,5 @@
-output.txt
-alice.txt
+*/output.txt
+*/alice.txt
 
 # C++ objects and libs
 *.slo
